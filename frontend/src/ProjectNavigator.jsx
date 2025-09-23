@@ -197,7 +197,7 @@ const ProjectNode = ({
 		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, []);
 
-	const isExpanded = expandedNodes.includes(node._id || node.id);
+	const isExpanded = expandedNodes.includes(node._id);
 	const hasSubtasks = node.subtasks && node.subtasks.length > 0;
 
 	const getStatusIcon = (status) => {
@@ -300,7 +300,7 @@ const ProjectNode = ({
 				{hasSubtasks ? (
 					<button
 						className="w-6 h-6 mr-2"
-						onClick={() => onToggleExpand(node._id || node.id)}
+						onClick={() => onToggleExpand(node._id)}
 					>
 						{isExpanded ? (
 							<svg
@@ -441,7 +441,7 @@ const ProjectNode = ({
 								</button>
 								<button
 									onClick={() => {
-										onDelete(node.id);
+										onDelete(node._id);
 										setShowMenu(false);
 									}}
 									className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-secondary transition-colors"
@@ -459,7 +459,7 @@ const ProjectNode = ({
 				<div className="w-full">
 					{node.subtasks.map((subtask) => (
 						<ProjectNode
-							key={subtask._id || subtask.id}
+							key={subtask._id}
 							node={subtask}
 							depth={depth + 1}
 							onAddSubtask={onAddSubtask}
@@ -1018,7 +1018,7 @@ const ProjectNavigator = () => {
 			.then((res) => res.json())
 			.then((data) => {
 				// Refetch all tasks after add
-				fetch('/tasks')
+				fetch('http://localhost:3002/tasks')
 					.then((res) => res.json())
 					.then((data) => setTasks(data));
 				// Optionally expand the parent node if not already expanded
@@ -1040,7 +1040,7 @@ const ProjectNavigator = () => {
 			.then((res) => res.json())
 			.then((data) => {
 				// Refetch all tasks after edit
-				fetch('/tasks')
+				fetch('http://localhost:3002/tasks')
 					.then((res) => res.json())
 					.then((data) => setTasks(data));
 			})
@@ -1054,7 +1054,7 @@ const ProjectNavigator = () => {
 			.then((res) => res.json())
 			.then((data) => {
 				// Refetch all tasks after delete
-				fetch('/tasks')
+				fetch('http://localhost:3002/tasks')
 					.then((res) => res.json())
 					.then((data) => setTasks(data));
 			})
@@ -1218,18 +1218,17 @@ const ProjectNavigator = () => {
 							className="rounded-lg border bg-card text-card-foreground shadow-sm"
 						>
 							<div className="space-y-1 p-2">
-								{filteredTasks.map((task) => (
-									<ProjectNode
-										key={task.id}
-										node={task}
-										onAddSubtask={openAddModal}
-										onEdit={setEditingTask}
-										onDelete={handleDeleteTask}
-										onToggleExpand={handleToggleExpand}
-										expandedNodes={expandedNodes}
-									/>
-								))}
-								{filteredTasks.length === 0 && (
+												{filteredTasks.map((task) => (
+													<ProjectNode
+														key={task._id}
+														node={task}
+														onAddSubtask={openAddModal}
+														onEdit={setEditingTask}
+														onDelete={handleDeleteTask}
+														onToggleExpand={handleToggleExpand}
+														expandedNodes={expandedNodes}
+													/>
+												))}								{filteredTasks.length === 0 && (
 									<div className="p-4 text-center text-muted-foreground">
 										No tasks match the current filters.
 									</div>

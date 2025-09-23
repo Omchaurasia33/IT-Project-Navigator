@@ -65,6 +65,9 @@ exports.updateTask = async (req, res) => {
 
 // Delete a task and all its subtasks recursively
 async function deleteTaskAndSubtasks(taskId) {
+  if (!taskId) {
+    return; // Safeguard against deleting all tasks
+  }
   const subtasks = await Task.find({ parentTask: taskId });
   for (let sub of subtasks) {
     await deleteTaskAndSubtasks(sub._id);

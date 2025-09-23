@@ -7,7 +7,6 @@ const assignees = ['Alice', 'Bob', 'Charlie', 'Unassigned'];
 const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 	const isEditing = !!task;
 	const initialTaskState = {
-		id: Date.now() + Math.random(),
 		title: '',
 		status: 'To Do',
 		assignee: 'Unassigned',
@@ -16,7 +15,6 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 		endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 		avatar: 'https://picsum.photos/seed/8/40/40',
 		comments: 0,
-		subtasks: [],
 		// ...add other fields as needed
 	};
 	const [editedTask, setEditedTask] = useState(isEditing && task ? {
@@ -199,7 +197,7 @@ const ProjectNode = ({
 		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, []);
 
-	const isExpanded = expandedNodes.includes(node.id);
+	const isExpanded = expandedNodes.includes(node._id || node.id);
 	const hasSubtasks = node.subtasks && node.subtasks.length > 0;
 
 	const getStatusIcon = (status) => {
@@ -302,7 +300,7 @@ const ProjectNode = ({
 				{hasSubtasks ? (
 					<button
 						className="w-6 h-6 mr-2"
-						onClick={() => onToggleExpand(node.id)}
+						onClick={() => onToggleExpand(node._id || node.id)}
 					>
 						{isExpanded ? (
 							<svg
@@ -425,7 +423,7 @@ const ProjectNode = ({
 							<div className="absolute right-0 mt-1 w-32 bg-card border border-border rounded shadow-lg z-10">
 								<button
 									onClick={() => {
-										onAddSubtask(node.id);
+										onAddSubtask(node);
 										setShowMenu(false);
 									}}
 									className="w-full px-3 py-2 text-left text-sm text-card-foreground hover:bg-secondary transition-colors"
@@ -461,7 +459,7 @@ const ProjectNode = ({
 				<div className="w-full">
 					{node.subtasks.map((subtask) => (
 						<ProjectNode
-							key={subtask.id}
+							key={subtask._id || subtask.id}
 							node={subtask}
 							depth={depth + 1}
 							onAddSubtask={onAddSubtask}
@@ -948,7 +946,7 @@ const ProjectNavigator = () => {
 
 	// Fetch tasks from backend API
 	useEffect(() => {
-		fetch('/tasks')
+	fetch('http://localhost:3002/tasks')
 			.then((res) => res.json())
 			.then((data) => setTasks(data))
 			.catch((err) => console.error('Failed to fetch tasks:', err));
@@ -956,7 +954,7 @@ const ProjectNavigator = () => {
 	const [statusFilter, setStatusFilter] = useState('all');
 	const [assigneeFilter, setAssigneeFilter] = useState('all');
 	const [editingTask, setEditingTask] = useState(null);
-	const [addingToParentId, setAddingToParentId] = useState(null);
+	const [addingToParent, setAddingToParent] = useState(null);
 	const [expandedNodes, setExpandedNodes] = useState([1, 2]); // Initially expanded nodes
 	const [isAddingRootTask, setIsAddingRootTask] = useState(false);
 
@@ -1009,10 +1007,10 @@ const ProjectNavigator = () => {
 
 	const filteredTasks = filterTasks(tasks);
 
-	const handleAddTask = (newTask, parentId) => {
-		// Add new task or subtask via API
-		const payload = parentId ? { ...newTask, parentId } : newTask;
-		fetch('/tasks', {
+	const handleAddTask = (newTask, parent) => {
+		// parent is the full parent node object, or null for root
+		const payload = parent && parent._id ? { ...newTask, parentTask: parent._id } : newTask;
+	fetch('http://localhost:3002/tasks', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
@@ -1024,17 +1022,17 @@ const ProjectNavigator = () => {
 					.then((res) => res.json())
 					.then((data) => setTasks(data));
 				// Optionally expand the parent node if not already expanded
-				if (parentId && !expandedNodes.includes(parentId)) {
-					setExpandedNodes([...expandedNodes, parentId]);
+				if (parent && parent._id && !expandedNodes.includes(parent._id)) {
+					setExpandedNodes([...expandedNodes, parent._id]);
 				}
 			})
 			.catch((err) => console.error('Failed to add task:', err));
 		setIsAddingRootTask(false);
-		setAddingToParentId(null);
+		setAddingToParent(null);
 	};
 
 	const handleEditTask = (updatedTask) => {
-		fetch(`/tasks/${updatedTask.id}`, {
+	fetch(`http://localhost:3002/tasks/${updatedTask._id || updatedTask.id}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(updatedTask),
@@ -1050,7 +1048,7 @@ const ProjectNavigator = () => {
 	};
 
 	const handleDeleteTask = (taskId) => {
-		fetch(`/tasks/${taskId}`, {
+	fetch(`http://localhost:3002/tasks/${taskId}`, {
 			method: 'DELETE',
 		})
 			.then((res) => res.json())
@@ -1071,20 +1069,20 @@ const ProjectNavigator = () => {
 		}
 	};
 
-	const openAddModal = (parentId = null) => {
-		if (parentId) {
-			setAddingToParentId(parentId);
+	const openAddModal = (parent = null) => {
+		if (parent) {
+			setAddingToParent(parent);
 			setIsAddingRootTask(false);
 		} else {
 			setIsAddingRootTask(true);
-			setAddingToParentId(null);
+			setAddingToParent(null);
 		}
 		setEditingTask(null);
 	};
 
 	const closeModal = () => {
 		setEditingTask(null);
-		setAddingToParentId(null);
+		setAddingToParent(null);
 		setIsAddingRootTask(false);
 	};
 
@@ -1244,10 +1242,10 @@ const ProjectNavigator = () => {
 				</div>
 
 				{/* Modal for adding/editing */}
-				{(editingTask || addingToParentId !== null || isAddingRootTask) && (
+				{(editingTask || addingToParent !== null || isAddingRootTask) && (
 					<AddEditTaskModal
 						task={editingTask}
-						parentId={addingToParentId}
+						parentId={addingToParent}
 						onSave={editingTask ? handleEditTask : handleAddTask}
 						onClose={closeModal}
 					/>

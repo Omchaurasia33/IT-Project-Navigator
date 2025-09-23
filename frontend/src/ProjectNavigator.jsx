@@ -6,21 +6,40 @@ const assignees = ['Alice', 'Bob', 'Charlie', 'Unassigned'];
 
 const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 	const isEditing = !!task;
-	const initialTaskState = task || {
+	const initialTaskState = {
 		id: Date.now() + Math.random(),
 		title: '',
 		status: 'To Do',
 		assignee: 'Unassigned',
 		priority: 'Medium',
 		startDate: new Date().toISOString().split('T')[0],
-		endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-			.toISOString()
-			.split('T')[0],
+		endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 		avatar: 'https://picsum.photos/seed/8/40/40',
 		comments: 0,
 		subtasks: [],
+		// ...add other fields as needed
 	};
-	const [editedTask, setEditedTask] = useState(initialTaskState);
+	const [editedTask, setEditedTask] = useState(isEditing && task ? {
+		...initialTaskState,
+		...task,
+		startDate: task.startDate ? task.startDate.slice(0, 10) : initialTaskState.startDate,
+		endDate: task.endDate ? task.endDate.slice(0, 10) : initialTaskState.endDate,
+	} : initialTaskState);
+
+	// Prefill modal fields when editing
+	useEffect(() => {
+		if (isEditing && task) {
+			setEditedTask({
+				...initialTaskState,
+				...task,
+				startDate: task.startDate ? task.startDate.slice(0, 10) : initialTaskState.startDate,
+				endDate: task.endDate ? task.endDate.slice(0, 10) : initialTaskState.endDate,
+			});
+		} else if (!isEditing) {
+			setEditedTask(initialTaskState);
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [task, isEditing]);
 
 	const handleSave = () => {
 		onSave(editedTask, parentId);

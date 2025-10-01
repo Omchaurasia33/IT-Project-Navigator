@@ -1,5 +1,5 @@
 import React from 'react';
-import ProjectNavigator from './ProjectNavigator';
+import ProjectNavigator from './components/ProjectNavigator/ProjectNavigator';
 
 function App() {
   return (

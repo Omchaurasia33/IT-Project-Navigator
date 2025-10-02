@@ -1,5 +1,4 @@
-// components/AssigneesPage/AssigneesPage.js
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./AssigneesPage.css";
 
 const AssigneesPage = () => {
@@ -102,30 +101,17 @@ const AssigneesPage = () => {
             <th>Name</th>
             <th>Email</th>
             <th>Role</th>
-            <th>Actions</th>
+            <th></th> {/* Empty header for the three-dots column */}
           </tr>
         </thead>
         <tbody>
           {assignees.map((assignee) => (
-            <tr key={assignee.id}>
-              <td>{assignee.name}</td>
-              <td>{assignee.email}</td>
-              <td>{assignee.role}</td>
-              <td>
-                <button
-                  className="edit-btn"
-                  onClick={() => openEditModal(assignee)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => openDeleteModal(assignee)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
+            <AssigneeRow
+              key={assignee.id}
+              assignee={assignee}
+              onEdit={openEditModal}
+              onDelete={openDeleteModal}
+            />
           ))}
         </tbody>
       </table>
@@ -150,7 +136,6 @@ const AssigneesPage = () => {
                   This may affect projects they are assigned to.
                 </p>
                 <div className="modal-actions">
-                  
                   <button onClick={handleDelete} className="btn-delete">
                     Delete
                   </button>
@@ -198,7 +183,6 @@ const AssigneesPage = () => {
                   <button onClick={closeModal} className="btn-cancel">
                     Cancel
                   </button>
-                  
                 </div>
               </>
             )}
@@ -208,5 +192,81 @@ const AssigneesPage = () => {
     </div>
   );
 };
+
+// Extracted row component with dropdown menu
+const AssigneeRow = ({ assignee, onEdit, onDelete }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <tr className="group">
+      <td>{assignee.name}</td>
+      <td>{assignee.email}</td>
+      <td>{assignee.role}</td>
+      <td className="relative">
+        <div ref={menuRef} className="inline-block relative">
+          {/* Three-dot menu button */}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary transition-colors focus:outline-none"
+            aria-label="More options"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 text-muted-foreground"
+            >
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="12" cy="5" r="1" />
+              <circle cx="12" cy="19" r="1" />
+            </svg>
+          </button>
+
+          {/* Dropdown Menu */}
+          {showMenu && (
+            <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg z-10">
+              <button
+                onClick={() => {
+                  onEdit(assignee);
+                  setShowMenu(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(assignee);
+                  setShowMenu(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+};
+
 
 export default AssigneesPage;

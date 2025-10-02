@@ -1,5 +1,5 @@
 // components/ProjectsPage/ProjectsPage.js
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./ProjectsPage.css";
 
 const ProjectsPage = () => {
@@ -40,7 +40,7 @@ const ProjectsPage = () => {
   const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
   const [currentProject, setCurrentProject] = useState(null);
 
-  // Form state (used for both add and edit)
+  // Form state
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -50,7 +50,6 @@ const ProjectsPage = () => {
     priority: "Medium",
   });
 
-  // Open Add Modal
   const openAddModal = () => {
     setModalType("add");
     setForm({
@@ -64,7 +63,6 @@ const ProjectsPage = () => {
     setIsModalOpen(true);
   };
 
-  // Open Edit Modal
   const openEditModal = (project) => {
     setModalType("edit");
     setCurrentProject(project);
@@ -79,19 +77,22 @@ const ProjectsPage = () => {
     setIsModalOpen(true);
   };
 
-  // Close Modal
+  const openDeleteModal = (project) => {
+    setModalType("delete");
+    setCurrentProject(project);
+    setIsModalOpen(true);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentProject(null);
   };
 
-  // Handle Input Change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save Project (Add or Edit)
   const handleSaveProject = () => {
     const { name, description, manager, startDate, endDate, priority } = form;
     if (!name.trim()) return;
@@ -110,115 +111,50 @@ const ProjectsPage = () => {
       };
       setProjects([...projects, newProject]);
     } else if (modalType === "edit" && currentProject) {
-      const updatedProjects = projects.map((p) =>
-        p.id === currentProject.id
-          ? {
-              ...p,
-              name: name.trim(),
-              description: description.trim() || "No description provided.",
-              manager: manager.trim() || "Unassigned",
-              startDate,
-              endDate,
-              priority,
-            }
-          : p
+      setProjects(
+        projects.map((p) =>
+          p.id === currentProject.id
+            ? {
+                ...p,
+                name: name.trim(),
+                description: description.trim() || "No description provided.",
+                manager: manager.trim() || "Unassigned",
+                startDate,
+                endDate,
+                priority,
+              }
+            : p
+        )
       );
-      setProjects(updatedProjects);
     }
-
     closeModal();
   };
 
-  // Delete Project
   const handleDeleteProject = () => {
     if (!currentProject) return;
     setProjects(projects.filter((p) => p.id !== currentProject.id));
     closeModal();
   };
 
-  // Open Delete Confirmation
-  const openDeleteModal = (project) => {
-    setModalType("delete");
-    setCurrentProject(project);
-    setIsModalOpen(true);
-  };
-
   return (
     <div className="projects-container">
       <h2>Projects</h2>
-
-      {/* Add Project Button */}
       <button onClick={openAddModal} className="add-project-btn">
         + Add Project
       </button>
 
-      {/* Project List */}
       <div className="project-list">
         {projects.map((project) => (
-          <div key={project.id} className="project-card">
-            <div
-              className="project-header"
-              onClick={() =>
-                setExpandedProject(expandedProject === project.id ? null : project.id)
-              }
-            >
-              <div>
-                <span className="project-name">{project.name}</span>
-                <span className="project-manager"> • {project.manager}</span>
-              </div>
-              <div className="header-actions">
-                <span className={`priority-badge priority-${project.priority.toLowerCase()}`}>
-                  {project.priority}
-                </span>
-                <span className={`status-badge status-${project.status.toLowerCase().replace(" ", "-")}`}>
-                  {project.status}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEditModal(project);
-                  }}
-                  className="icon-btn edit-btn"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openDeleteModal(project);
-                  }}
-                  className="icon-btn delete-btn"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-
-            {expandedProject === project.id && (
-              <div className="project-details">
-                <p className="description">{project.description}</p>
-                <div className="dates">
-                  <span>Start: {project.startDate || "—"} </span>
-                  <span>End: {project.endDate || "—"}</span>
-                </div>
-                <div className="task-section">
-                  <h4>Tasks</h4>
-                  {project.tasks.length > 0 ? (
-                    project.tasks.map((task) => (
-                      <div key={task.id} className="task-item">
-                        <span>{task.title}</span>
-                        <span className={`task-status status-${task.status.toLowerCase().replace(" ", "-")}`}>
-                          {task.status}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="no-tasks">No tasks yet</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <ProjectCard
+            key={project.id}
+            project={project}
+            isExpanded={expandedProject === project.id}
+            onToggleExpand={() =>
+              setExpandedProject(expandedProject === project.id ? null : project.id)
+            }
+            onEdit={openEditModal}
+            onDelete={openDeleteModal}
+          />
         ))}
       </div>
 
@@ -241,7 +177,6 @@ const ProjectsPage = () => {
                   This action cannot be undone.
                 </p>
                 <div className="modal-actions">
-                  
                   <button onClick={handleDeleteProject} className="btn-delete">
                     Delete
                   </button>
@@ -320,6 +255,118 @@ const ProjectsPage = () => {
                   </button>
                 </div>
               </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Extracted ProjectCard component with three-dot menu
+const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="project-card group">
+      <div className="project-header" onClick={onToggleExpand}>
+        <div>
+          <span className="project-name">{project.name}</span>
+          <span className="project-manager"> • {project.manager}</span>
+        </div>
+        <div className="header-actions">
+          <span className={`priority-badge priority-${project.priority.toLowerCase()}`}>
+            {project.priority}
+          </span>
+          <span className={`status-badge status-${project.status.toLowerCase().replace(" ", "-")}`}>
+            {project.status}
+          </span>
+
+          {/* Three-dot menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="menu-button"
+              aria-label="Project actions"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="12" cy="5" r="1" />
+                <circle cx="12" cy="19" r="1" />
+              </svg>
+            </button>
+
+            {showMenu && (
+              <div className="dropdown-menu">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(project);
+                    setShowMenu(false);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(project);
+                    setShowMenu(false);
+                  }}
+                  className="delete-option"
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="project-details">
+          <p className="description">{project.description}</p>
+          <div className="dates">
+            <span>Start: {project.startDate || "—"} </span>
+            <span>End: {project.endDate || "—"}</span>
+          </div>
+          <div className="task-section">
+            <h4>Tasks</h4>
+            {project.tasks.length > 0 ? (
+              project.tasks.map((task) => (
+                <div key={task.id} className="task-item">
+                  <span>{task.title}</span>
+                  <span className={`task-status status-${task.status.toLowerCase().replace(" ", "-")}`}>
+                    {task.status}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="no-tasks">No tasks yet</p>
             )}
           </div>
         </div>

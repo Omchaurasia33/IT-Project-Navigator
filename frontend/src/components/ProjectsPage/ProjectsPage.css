@@ -324,3 +324,83 @@
 .btn-delete:hover {
   background: #b91c1c;
 }
+/* === ADD THESE STYLES TO YOUR EXISTING ProjectsPage.css === */
+
+/* Ensure project card supports relative positioning for dropdown */
+.project-card {
+  position: relative;
+}
+
+/* Three-dot menu button */
+.menu-button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b; /* muted foreground */
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+/* Show on hover over the project card */
+.project-card:hover .menu-button {
+  opacity: 1;
+}
+
+.menu-button:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 20px; /* align with padding of project-header */
+  margin-top: 4px;
+  width: 128px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1e293b;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-menu button:hover {
+  background-color: #f1f5f9;
+}
+
+.dropdown-menu button.delete-option {
+  color: #ef4444;
+}
+
+.dropdown-menu button.delete-option:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+/* Optional: Ensure header-actions doesn't wrap */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}

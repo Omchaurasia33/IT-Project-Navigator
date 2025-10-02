@@ -8,63 +8,92 @@ const AssigneesPage = () => {
     { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Project Manager" },
   ]);
 
-  const [newAssignee, setNewAssignee] = useState({ name: "", email: "", role: "" });
-  const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ name: "", email: "", role: "" });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
+  const [currentAssignee, setCurrentAssignee] = useState(null);
 
-  // Add new assignee
-  const handleAdd = () => {
-    if (!newAssignee.name || !newAssignee.email || !newAssignee.role) return;
-    setAssignees([...assignees, { id: Date.now(), ...newAssignee }]);
-    setNewAssignee({ name: "", email: "", role: "" });
+  // Form state
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    role: "",
+  });
+
+  // Open Add Modal
+  const openAddModal = () => {
+    setModalType("add");
+    setForm({ name: "", email: "", role: "" });
+    setIsModalOpen(true);
   };
 
-  // Delete assignee
-  const handleDelete = (id) => {
-    setAssignees(assignees.filter((a) => a.id !== id));
+  // Open Edit Modal
+  const openEditModal = (assignee) => {
+    setModalType("edit");
+    setCurrentAssignee(assignee);
+    setForm({
+      name: assignee.name,
+      email: assignee.email,
+      role: assignee.role,
+    });
+    setIsModalOpen(true);
   };
 
-  // Start editing
-  const handleEditStart = (assignee) => {
-    setEditingId(assignee.id);
-    setEditData({ ...assignee });
+  // Open Delete Confirmation
+  const openDeleteModal = (assignee) => {
+    setModalType("delete");
+    setCurrentAssignee(assignee);
+    setIsModalOpen(true);
   };
 
-  // Save edited data
-  const handleEditSave = () => {
-    setAssignees(
-      assignees.map((a) => (a.id === editingId ? { ...a, ...editData } : a))
-    );
-    setEditingId(null);
-    setEditData({ name: "", email: "", role: "" });
+  // Close Modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCurrentAssignee(null);
+  };
+
+  // Handle Input Change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Save (Add or Edit)
+  const handleSave = () => {
+    const { name, email, role } = form;
+    if (!name.trim() || !email.trim() || !role.trim()) return;
+
+    if (modalType === "add") {
+      setAssignees([
+        ...assignees,
+        { id: Date.now(), name: name.trim(), email: email.trim(), role: role.trim() },
+      ]);
+    } else if (modalType === "edit" && currentAssignee) {
+      setAssignees(
+        assignees.map((a) =>
+          a.id === currentAssignee.id
+            ? { ...a, name: name.trim(), email: email.trim(), role: role.trim() }
+            : a
+        )
+      );
+    }
+
+    closeModal();
+  };
+
+  // Delete Assignee
+  const handleDelete = () => {
+    if (!currentAssignee) return;
+    setAssignees(assignees.filter((a) => a.id !== currentAssignee.id));
+    closeModal();
   };
 
   return (
     <div className="assignees-container">
       <h2>Assignees Management</h2>
 
-      {/* Add Form */}
-      <div className="add-form">
-        <input
-          type="text"
-          placeholder="Name"
-          value={newAssignee.name}
-          onChange={(e) => setNewAssignee({ ...newAssignee, name: e.target.value })}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={newAssignee.email}
-          onChange={(e) => setNewAssignee({ ...newAssignee, email: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Role"
-          value={newAssignee.role}
-          onChange={(e) => setNewAssignee({ ...newAssignee, role: e.target.value })}
-        />
-        <button onClick={handleAdd}>+ Add</button>
-      </div>
+      <button onClick={openAddModal} className="add-assignee-btn">
+        + Add Assignee
+      </button>
 
       {/* Assignee Table */}
       <table className="assignees-table">
@@ -79,46 +108,101 @@ const AssigneesPage = () => {
         <tbody>
           {assignees.map((assignee) => (
             <tr key={assignee.id}>
-              {editingId === assignee.id ? (
-                <>
-                  <td>
-                    <input
-                      value={editData.name}
-                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={editData.email}
-                      onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={editData.role}
-                      onChange={(e) => setEditData({ ...editData, role: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <button className="save" onClick={handleEditSave}>Save</button>
-                    <button className="cancel" onClick={() => setEditingId(null)}>Cancel</button>
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td>{assignee.name}</td>
-                  <td>{assignee.email}</td>
-                  <td>{assignee.role}</td>
-                  <td>
-                    <button className="edit" onClick={() => handleEditStart(assignee)}>Edit</button>
-                    <button className="delete" onClick={() => handleDelete(assignee.id)}>Delete</button>
-                  </td>
-                </>
-              )}
+              <td>{assignee.name}</td>
+              <td>{assignee.email}</td>
+              <td>{assignee.role}</td>
+              <td>
+                <button
+                  className="edit-btn"
+                  onClick={() => openEditModal(assignee)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => openDeleteModal(assignee)}
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>
+              {modalType === "add"
+                ? "Add New Assignee"
+                : modalType === "edit"
+                ? "Edit Assignee"
+                : "Confirm Deletion"}
+            </h3>
+
+            {modalType === "delete" ? (
+              <>
+                <p>
+                  Are you sure you want to delete{" "}
+                  <strong>{currentAssignee?.name}</strong>?<br />
+                  This may affect projects they are assigned to.
+                </p>
+                <div className="modal-actions">
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                  <button onClick={handleDelete} className="btn-delete">
+                    Delete
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleInputChange}
+                    placeholder="Full name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleInputChange}
+                    placeholder="user@example.com"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Role</label>
+                  <input
+                    type="text"
+                    name="role"
+                    value={form.role}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Developer, PM"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                  <button onClick={handleSave} className="btn-save">
+                    {modalType === "add" ? "Add Assignee" : "Save Changes"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

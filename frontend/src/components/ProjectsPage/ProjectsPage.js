@@ -180,7 +180,7 @@ const ProjectsPage = () => {
                   }}
                   className="icon-btn edit-btn"
                 >
-                  ✏️
+                  Edit
                 </button>
                 <button
                   onClick={(e) => {
@@ -189,7 +189,7 @@ const ProjectsPage = () => {
                   }}
                   className="icon-btn delete-btn"
                 >
-                  🗑️
+                  Delete
                 </button>
               </div>
             </div>

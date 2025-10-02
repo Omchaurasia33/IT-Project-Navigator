@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const taskRoutes = require('./routes/task'); // ✅ Add task routes
+const setupSwagger = require('./swagger'); // ✅ Add swagger setup
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,6 +25,8 @@ app.use('/tasks', taskRoutes); // ✅ Mount task routes
 app.get('/', (req, res) => {
   res.send('🚀 Project Navigator Backend Running!');
 });
+
+setupSwagger(app);
 
 // 404 handler
 app.use('*', (req, res) => {

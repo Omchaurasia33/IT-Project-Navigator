@@ -150,11 +150,12 @@ const AssigneesPage = () => {
                   This may affect projects they are assigned to.
                 </p>
                 <div className="modal-actions">
-                  <button onClick={closeModal} className="btn-cancel">
-                    Cancel
-                  </button>
+                  
                   <button onClick={handleDelete} className="btn-delete">
                     Delete
+                  </button>
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
                   </button>
                 </div>
               </>
@@ -191,12 +192,13 @@ const AssigneesPage = () => {
                   />
                 </div>
                 <div className="modal-actions">
-                  <button onClick={closeModal} className="btn-cancel">
-                    Cancel
-                  </button>
                   <button onClick={handleSave} className="btn-save">
                     {modalType === "add" ? "Add Assignee" : "Save Changes"}
                   </button>
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                  
                 </div>
               </>
             )}

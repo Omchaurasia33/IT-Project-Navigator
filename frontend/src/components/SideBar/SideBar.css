@@ -1,8 +1,10 @@
+/* components/SideBar/SideBar.css */
 /* Full app layout (sidebar + content) */
 .app-layout {
   display: flex;
   height: 100vh;
   width: 100%;
+  overflow: hidden; /* Prevent body scroll issues */
 }
 
 /* Sidebar styles */
@@ -12,35 +14,73 @@
   width: 250px;
   border-right: 1px solid #e0e0e0;
   background-color: #f8f9fa;
-  padding-top: 20px;
+  justify-content: space-between; /* Pushes footer to bottom */
+  padding: 20px 0; /* Top/bottom padding for spacing */
+}
+
+.main-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px; /* Side padding for buttons */
+  flex: 1; /* Allows it to take available space without stretching footer */
+}
+
+.sidebar-footer {
+  padding: 0 16px 20px 16px; /* Bottom padding and side padding */
+  border-top: 1px solid #e9ecef; /* Subtle separator */
+  margin-top: auto; /* Ensures it's pushed to the bottom */
 }
 
 /* Tabs inside sidebar */
-.sidebar-tabs {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
-
 .tab-button {
   padding: 12px 16px;
   text-align: left;
   border: none;
   background: none;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   color: #333;
+  border-radius: 8px;
+  width: 100%;
+  text-decoration: none;
+  display: block;
 }
 
-.tab-button:hover {
+.tab-button:hover,
+.tab-button:focus {
   background-color: #e9ecef;
+  color: #0f172a;
+  outline: none;
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: -2px;
 }
 
 .tab-button.active {
-  background-color: #0f172acc;
+  background-color: #0f172a;
   color: white;
-  font-weight: bold;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.profile-tab {
+  margin-top: 8px; /* Extra spacing above profile button in footer */
+  font-weight: 600;
+  color: #6c757d; /* Slightly muted for profile */
+}
+
+.profile-tab:hover,
+.profile-tab:focus {
+  background-color: #e9ecef;
+  color: #0f172a;
+}
+
+.profile-tab.active {
+  background-color: #0f172a;
+  color: white;
 }
 
 /* Right content area */
@@ -48,7 +88,48 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  background-color: #ffffff;
 }
-.sidebar-tabs button:last-child {
-  margin-top: auto; /* Pushes Profile tab to the bottom with a gap */
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+  }
+
+  .main-nav,
+  .sidebar-footer {
+    flex-direction: row;
+    padding: 12px 16px;
+    border-top: none;
+  }
+
+  .tab-button,
+  .profile-tab {
+    margin-right: 4px;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .profile-tab {
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
 }

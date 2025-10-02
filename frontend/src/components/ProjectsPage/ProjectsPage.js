@@ -37,7 +37,7 @@ const ProjectsPage = () => {
 
   const [expandedProject, setExpandedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(""); // "add" | "edit"
+  const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
   const [currentProject, setCurrentProject] = useState(null);
 
   // Form state (used for both add and edit)
@@ -241,64 +241,82 @@ const ProjectsPage = () => {
                   This action cannot be undone.
                 </p>
                 <div className="modal-actions">
-                  <button onClick={closeModal} className="btn-cancel">
-                    Cancel
-                  </button>
+                  
                   <button onClick={handleDeleteProject} className="btn-delete">
                     Delete
+                  </button>
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <div className="form-row">
+                <div className="form-group">
+                  <label>Project Name</label>
                   <input
                     type="text"
                     name="name"
-                    placeholder="Project Name *"
                     value={form.name}
                     onChange={handleInputChange}
+                    placeholder="Enter project name"
+                    required
                   />
+                </div>
+                <div className="form-group">
+                  <label>Project Manager</label>
                   <input
                     type="text"
                     name="manager"
-                    placeholder="Project Manager"
                     value={form.manager}
                     onChange={handleInputChange}
+                    placeholder="Enter project manager name"
                   />
                 </div>
                 <div className="form-row">
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={form.startDate}
-                    onChange={handleInputChange}
-                  />
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={form.endDate}
-                    onChange={handleInputChange}
-                  />
+                  <div className="form-group">
+                    <label>Start Date</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={form.startDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>End Date</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={form.endDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Priority</label>
                   <select name="priority" value={form.priority} onChange={handleInputChange}>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
                   </select>
                 </div>
-                <textarea
-                  name="description"
-                  placeholder="Project Description (optional)"
-                  value={form.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                />
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleInputChange}
+                    placeholder="Enter project description (optional)"
+                    rows="3"
+                  />
+                </div>
                 <div className="modal-actions">
-                  <button onClick={closeModal} className="btn-cancel">
-                    Cancel
-                  </button>
                   <button onClick={handleSaveProject} className="btn-save">
                     {modalType === "add" ? "Add Project" : "Save Changes"}
+                  </button>
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
                   </button>
                 </div>
               </>

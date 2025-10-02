@@ -20,32 +20,45 @@ const SideBar = () => {
         return <ProjectsPage />;
       case 'Assignees':
         return <AssigneesPage />;
-        case 'Profile':
-      return <ProfilePage />;
+      case 'Profile':
+        return <ProfilePage />;
       default:
         return <div className="content-panel">Select a tab</div>;
     }
   };
 
+  const mainTabs = ['Dashboard', 'Tasks', 'Projects', 'Assignees'];
+
   return (
     <div className="app-layout">
       {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-tabs">
-          {['Dashboard', 'Tasks', 'Projects', 'Assignees', 'Profile'].map((tab) => (
+      <aside className="sidebar" role="navigation" aria-label="Main navigation">
+        <nav className="main-nav" aria-label="Primary navigation">
+          {mainTabs.map((tab) => (
             <button
               key={tab}
               className={`tab-button ${activeTab === tab ? 'active' : ''}`}
               onClick={() => setActiveTab(tab)}
+              aria-current={activeTab === tab ? 'page' : undefined}
             >
               {tab}
             </button>
           ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button
+            className={`tab-button profile-tab ${activeTab === 'Profile' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Profile')}
+            aria-label="View profile"
+          >
+            Profile
+          </button>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content Area (right side) */}
-      <div className="main-content">{renderContent()}</div>
+      <main className="main-content" role="main">{renderContent()}</main>
     </div>
   );
 };

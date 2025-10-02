@@ -4,10 +4,11 @@ import ProjectNavigator from '../ProjectNavigator/ProjectNavigator';
 import ProjectsPage from '../ProjectsPage/ProjectsPage';
 import AssigneesPage from '../AssigneesPage/AssigneesPage';
 import DashboardPage from '../DashboardPage/DashboardPage';
+import ProfilePage from '../ProfilePage/ProfilePage';
 import './SideBar.css';
 
 const SideBar = () => {
-  const [activeTab, setActiveTab] = useState('Tasks');
+  const [activeTab, setActiveTab] = useState('Dashboard');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -19,6 +20,8 @@ const SideBar = () => {
         return <ProjectsPage />;
       case 'Assignees':
         return <AssigneesPage />;
+        case 'Profile':
+      return <ProfilePage />;
       default:
         return <div className="content-panel">Select a tab</div>;
     }
@@ -29,7 +32,7 @@ const SideBar = () => {
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-tabs">
-          {['Dashboard', 'Tasks', 'Projects', 'Assignees'].map((tab) => (
+          {['Dashboard', 'Tasks', 'Projects', 'Assignees', 'Profile'].map((tab) => (
             <button
               key={tab}
               className={`tab-button ${activeTab === tab ? 'active' : ''}`}

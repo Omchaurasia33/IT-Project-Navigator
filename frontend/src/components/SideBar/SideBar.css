@@ -49,3 +49,6 @@
   padding: 20px;
   overflow-y: auto;
 }
+.sidebar-tabs button:last-child {
+  margin-top: auto; /* Pushes Profile tab to the bottom with a gap */
+}

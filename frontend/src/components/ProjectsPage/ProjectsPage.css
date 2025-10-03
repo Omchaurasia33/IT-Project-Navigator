@@ -42,6 +42,10 @@
   overflow: hidden;
   transition: box-shadow 0.2s ease-in-out;
 }
+.project-card {
+  position: relative;
+  overflow: visible; /* 🟢 important */
+}
 
 .project-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
@@ -358,19 +362,22 @@
 }
 
 /* Dropdown Menu */
+/* Force dropdown menu to appear above the card */
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  right: 20px; /* align with padding of project-header */
+  right: 0;
   margin-top: 4px;
   width: 128px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 10;
-  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 9999;   /* 🚀 force it above everything */
+  overflow: visible; /* ensure it shows fully */
 }
+
 
 .dropdown-menu button {
   width: 100%;
@@ -403,4 +410,52 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+/* === Filter Row === */
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  min-width: 160px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* Update existing styles to ensure proper spacing */
+.add-project-btn {
+  padding: 10px 18px;
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2);
+}
+
+.add-project-btn:hover {
+  background: #0f172a;
+  transform: translateY(-1px);
 }

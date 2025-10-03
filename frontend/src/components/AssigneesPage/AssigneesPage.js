@@ -1,3 +1,4 @@
+// components/AssigneesPage/AssigneesPage.js
 import React, { useState, useRef, useEffect } from "react";
 import "./AssigneesPage.css";
 
@@ -10,6 +11,10 @@ const AssigneesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
   const [currentAssignee, setCurrentAssignee] = useState(null);
+  
+  // Filter states
+  const [roleFilter, setRoleFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Form state
   const [form, setForm] = useState({
@@ -86,13 +91,47 @@ const AssigneesPage = () => {
     closeModal();
   };
 
+  // Get unique roles for filter options
+  const uniqueRoles = [...new Set(assignees.map(a => a.role))];
+
+  // Filter assignees based on selected filters
+  const filteredAssignees = assignees.filter(assignee => {
+    const matchesRole = roleFilter === "All" || assignee.role === roleFilter;
+    const matchesSearch = assignee.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          assignee.email.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesRole && matchesSearch;
+  });
+
   return (
     <div className="assignees-container">
       <h2>Assignees Management</h2>
 
-      <button onClick={openAddModal} className="add-assignee-btn">
-        + Add Assignee
-      </button>
+      {/* Filter row */}
+      <div className="filter-row">
+        <div className="filter-group">
+          <input
+            type="text"
+            placeholder="Search assignees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          <select 
+            value={roleFilter} 
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="All">All Roles</option>
+            {uniqueRoles.map(role => (
+              <option key={role} value={role}>{role}</option>
+            ))}
+          </select>
+        </div>
+        
+        <button onClick={openAddModal} className="add-assignee-btn">
+          + Add Assignee
+        </button>
+      </div>
 
       {/* Assignee Table */}
       <table className="assignees-table">
@@ -105,7 +144,7 @@ const AssigneesPage = () => {
           </tr>
         </thead>
         <tbody>
-          {assignees.map((assignee) => (
+          {filteredAssignees.map((assignee) => (
             <AssigneeRow
               key={assignee.id}
               assignee={assignee}
@@ -267,6 +306,5 @@ const AssigneeRow = ({ assignee, onEdit, onDelete }) => {
     </tr>
   );
 };
-
 
 export default AssigneesPage;

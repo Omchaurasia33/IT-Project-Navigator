@@ -179,3 +179,66 @@
 .btn-delete:hover {
   background: #b91c1c;
 }
+/* === Filter Row === */
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  min-width: 200px;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  min-width: 160px;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+/* Update existing styles to ensure proper spacing */
+.add-assignee-btn {
+  padding: 10px 16px;
+  background: #0f172a;
+  color: white;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-assignee-btn:hover {
+  background: #0f172a;
+  transform: translateY(-1px);
+}

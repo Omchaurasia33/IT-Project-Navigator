@@ -39,6 +39,10 @@ const ProjectsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
   const [currentProject, setCurrentProject] = useState(null);
+  
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [assigneeFilter, setAssigneeFilter] = useState("All");
 
   // Form state
   const [form, setForm] = useState({
@@ -136,15 +140,54 @@ const ProjectsPage = () => {
     closeModal();
   };
 
+  // Filter projects based on selected filters
+  const filteredProjects = projects.filter(project => {
+    const statusMatch = statusFilter === "All" || project.status === statusFilter;
+    const assigneeMatch = assigneeFilter === "All" || project.manager === assigneeFilter;
+    return statusMatch && assigneeMatch;
+  });
+
+  // Get unique statuses and managers for filter options
+  const uniqueStatuses = [...new Set(projects.map(p => p.status))];
+  const uniqueManagers = [...new Set(projects.map(p => p.manager))];
+
   return (
     <div className="projects-container">
       <h2>Projects</h2>
-      <button onClick={openAddModal} className="add-project-btn">
-        + Add Project
-      </button>
+      
+      {/* Filter row */}
+      <div className="filter-row">
+        <div className="filter-group">
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="All">All Statuses</option>
+            {uniqueStatuses.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+          
+          <select 
+            value={assigneeFilter} 
+            onChange={(e) => setAssigneeFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="All">All Assignees</option>
+            {uniqueManagers.map(manager => (
+              <option key={manager} value={manager}>{manager}</option>
+            ))}
+          </select>
+        </div>
+        
+        <button onClick={openAddModal} className="add-project-btn">
+          + Add Project
+        </button>
+      </div>
 
       <div className="project-list">
-        {projects.map((project) => (
+        {filteredProjects.map((project) => (
           <ProjectCard
             key={project.id}
             project={project}

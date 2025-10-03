@@ -3,37 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import "./ProjectsPage.css";
 
 const ProjectsPage = () => {
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      name: "Project Management Module",
-      description: "Build internal PM tool with task tracking and sidebar navigation.",
-      manager: "Alex Rivera",
-      startDate: "2024-06-01",
-      endDate: "2024-08-30",
-      priority: "High",
-      status: "In Progress",
-      tasks: [
-        { id: 1, title: "In App.js remove ProjectNavigator component", status: "To Do" },
-        { id: 2, title: "Add sidebar component in App.js and create it", status: "To Do" },
-        { id: 3, title: "Add 4 tabs in sidebar", status: "To Do" },
-      ],
-    },
-    {
-      id: 2,
-      name: "Website Revamp",
-      description: "Modernize company website for better UX and mobile responsiveness.",
-      manager: "Samira Khan",
-      startDate: "2024-07-01",
-      endDate: "2024-09-15",
-      priority: "Medium",
-      status: "To Do",
-      tasks: [
-        { id: 1, title: "Update homepage UI", status: "To Do" },
-        { id: 2, title: "Fix navigation issues", status: "In Progress" },
-      ],
-    },
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [expandedProject, setExpandedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,18 +19,43 @@ const ProjectsPage = () => {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    manager: "",
+    managerId: "",
     startDate: "",
     endDate: "",
     priority: "Medium",
   });
+
+  // Fetch projects and assignees for manager dropdown
+  useEffect(() => {
+    Promise.all([
+      fetch('/projects').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch projects');
+        return res.json();
+      }),
+      fetch('/assignees').then(res => {
+        if (!res.ok) throw new Error('Failed to fetch assignees');
+        return res.json();
+      })
+    ])
+      .then(([fetchedProjects, fetchedAssignees]) => {
+        setProjects(fetchedProjects);
+        setAssigneesForFilter(fetchedAssignees);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load data:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const [assigneesForFilter, setAssigneesForFilter] = useState([]);
 
   const openAddModal = () => {
     setModalType("add");
     setForm({
       name: "",
       description: "",
-      manager: "",
+      managerId: "",
       startDate: "",
       endDate: "",
       priority: "Medium",
@@ -72,11 +68,11 @@ const ProjectsPage = () => {
     setCurrentProject(project);
     setForm({
       name: project.name,
-      description: project.description,
-      manager: project.manager,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      priority: project.priority,
+      description: project.description || "",
+      managerId: project.managerId || "",
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : "",
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : "",
+      priority: project.priority || "Medium",
     });
     setIsModalOpen(true);
   };
@@ -98,58 +94,107 @@ const ProjectsPage = () => {
   };
 
   const handleSaveProject = () => {
-    const { name, description, manager, startDate, endDate, priority } = form;
+    const { name, description, managerId, startDate, endDate, priority } = form;
     if (!name.trim()) return;
 
+    // Convert dates to ISO strings if provided
+    const payload = {
+      name: name.trim(),
+      description: description.trim() || "",
+      managerId: managerId || null,
+      startDate: startDate ? new Date(startDate).toISOString() : null,
+      endDate: endDate ? new Date(endDate).toISOString() : null,
+      priority,
+      assigneeIds: [], // You can extend this later with multi-select
+    };
+
     if (modalType === "add") {
-      const newProject = {
-        id: Date.now(),
-        name: name.trim(),
-        description: description.trim() || "No description provided.",
-        manager: manager.trim() || "Unassigned",
-        startDate,
-        endDate,
-        priority,
-        status: "To Do",
-        tasks: [],
-      };
-      setProjects([...projects, newProject]);
+      fetch('/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to add project');
+          return res.json();
+        })
+        .then(newProject => {
+          setProjects(prev => [...prev, newProject]);
+          closeModal();
+        })
+        .catch(err => {
+          console.error('Failed to add project:', err);
+          alert('Failed to add project. Please try again.');
+        });
     } else if (modalType === "edit" && currentProject) {
-      setProjects(
-        projects.map((p) =>
-          p.id === currentProject.id
-            ? {
-                ...p,
-                name: name.trim(),
-                description: description.trim() || "No description provided.",
-                manager: manager.trim() || "Unassigned",
-                startDate,
-                endDate,
-                priority,
-              }
-            : p
-        )
-      );
+      fetch(`/projects/${currentProject._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to update project');
+          return res.json();
+        })
+        .then(updatedProject => {
+          setProjects(prev =>
+            prev.map(p => (p._id === updatedProject._id ? updatedProject : p))
+          );
+          closeModal();
+        })
+        .catch(err => {
+          console.error('Failed to update project:', err);
+          alert('Failed to update project. Please try again.');
+        });
     }
-    closeModal();
   };
 
   const handleDeleteProject = () => {
     if (!currentProject) return;
-    setProjects(projects.filter((p) => p.id !== currentProject.id));
-    closeModal();
+
+    fetch(`/projects/${currentProject._id}`, {
+      method: 'DELETE',
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to delete project');
+        return res.json();
+      })
+      .then(() => {
+        setProjects(prev => prev.filter(p => p._id !== currentProject._id));
+        closeModal();
+      })
+      .catch(err => {
+        console.error('Failed to delete project:', err);
+        alert('Failed to delete project. Please try again.');
+      });
   };
 
+  // Get unique statuses and managers for filter options
+  const uniqueStatuses = [...new Set(projects.map(p => p.status || "To Do"))];
+  
+  const uniqueManagers = assigneesForFilter.map(a => ({
+    id: a._id,
+    name: a.name
+  }));
+
   // Filter projects based on selected filters
-  const filteredProjects = projects.filter(project => {
-    const statusMatch = statusFilter === "All" || project.status === statusFilter;
-    const assigneeMatch = assigneeFilter === "All" || project.manager === assigneeFilter;
+  const filteredProjects = projects.map(project => {
+    // Resolve manager name for display
+    const managerAssignee = assigneesForFilter.find(a => a._id === project.managerId);
+    return {
+      ...project,
+      managerName: managerAssignee ? managerAssignee.name : "Unassigned"
+    };
+  }).filter(project => {
+    const statusMatch = statusFilter === "All" || (project.status || "To Do") === statusFilter;
+    const assigneeMatch = assigneeFilter === "All" || 
+      (assigneeFilter === "Unassigned" ? !project.managerId : project.managerId === assigneeFilter);
     return statusMatch && assigneeMatch;
   });
 
-  // Get unique statuses and managers for filter options
-  const uniqueStatuses = [...new Set(projects.map(p => p.status))];
-  const uniqueManagers = [...new Set(projects.map(p => p.manager))];
+  if (loading) {
+    return <div className="projects-container">Loading projects...</div>;
+  }
 
   return (
     <div className="projects-container">
@@ -175,8 +220,9 @@ const ProjectsPage = () => {
             className="filter-select"
           >
             <option value="All">All Assignees</option>
+            <option value="Unassigned">Unassigned</option>
             {uniqueManagers.map(manager => (
-              <option key={manager} value={manager}>{manager}</option>
+              <option key={manager.id} value={manager.id}>{manager.name}</option>
             ))}
           </select>
         </div>
@@ -189,11 +235,11 @@ const ProjectsPage = () => {
       <div className="project-list">
         {filteredProjects.map((project) => (
           <ProjectCard
-            key={project.id}
+            key={project._id}
             project={project}
-            isExpanded={expandedProject === project.id}
+            isExpanded={expandedProject === project._id}
             onToggleExpand={() =>
-              setExpandedProject(expandedProject === project.id ? null : project.id)
+              setExpandedProject(expandedProject === project._id ? null : project._id)
             }
             onEdit={openEditModal}
             onDelete={openDeleteModal}
@@ -243,13 +289,18 @@ const ProjectsPage = () => {
                 </div>
                 <div className="form-group">
                   <label>Project Manager</label>
-                  <input
-                    type="text"
-                    name="manager"
-                    value={form.manager}
+                  <select
+                    name="managerId"
+                    value={form.managerId}
                     onChange={handleInputChange}
-                    placeholder="Enter project manager name"
-                  />
+                  >
+                    <option value="">Unassigned</option>
+                    {assigneesForFilter.map(assignee => (
+                      <option key={assignee._id} value={assignee._id}>
+                        {assignee.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
@@ -326,14 +377,14 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) 
       <div className="project-header" onClick={onToggleExpand}>
         <div>
           <span className="project-name">{project.name}</span>
-          <span className="project-manager"> • {project.manager}</span>
+          <span className="project-manager"> • {project.managerName}</span>
         </div>
         <div className="header-actions">
-          <span className={`priority-badge priority-${project.priority.toLowerCase()}`}>
-            {project.priority}
+          <span className={`priority-badge priority-${project.priority?.toLowerCase() || 'medium'}`}>
+            {project.priority || "Medium"}
           </span>
-          <span className={`status-badge status-${project.status.toLowerCase().replace(" ", "-")}`}>
-            {project.status}
+          <span className={`status-badge status-${(project.status || "To Do").toLowerCase().replace(" ", "-")}`}>
+            {project.status || "To Do"}
           </span>
 
           {/* Three-dot menu */}
@@ -392,16 +443,16 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) 
 
       {isExpanded && (
         <div className="project-details">
-          <p className="description">{project.description}</p>
+          <p className="description">{project.description || "No description provided."}</p>
           <div className="dates">
-            <span>Start: {project.startDate || "—"} </span>
-            <span>End: {project.endDate || "—"}</span>
+            <span>Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : "—"} </span>
+            <span>End: {project.endDate ? new Date(project.endDate).toLocaleDateString() : "—"}</span>
           </div>
           <div className="task-section">
             <h4>Tasks</h4>
-            {project.tasks.length > 0 ? (
+            {project.tasks && project.tasks.length > 0 ? (
               project.tasks.map((task) => (
-                <div key={task.id} className="task-item">
+                <div key={task._id} className="task-item">
                   <span>{task.title}</span>
                   <span className={`task-status status-${task.status.toLowerCase().replace(" ", "-")}`}>
                     {task.status}

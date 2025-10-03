@@ -3,10 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import "./AssigneesPage.css";
 
 const AssigneesPage = () => {
-  const [assignees, setAssignees] = useState([
-    { id: 1, name: "John Doe", email: "john@example.com", role: "Developer" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Project Manager" },
-  ]);
+  const [assignees, setAssignees] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(""); // "add" | "edit" | "delete"
@@ -22,6 +20,23 @@ const AssigneesPage = () => {
     email: "",
     role: "",
   });
+
+  // Fetch assignees on mount
+  useEffect(() => {
+    fetch('/assignees')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch assignees');
+        return res.json();
+      })
+      .then((data) => {
+        setAssignees(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch assignees:', err);
+        setLoading(false);
+      });
+  }, []);
 
   // Open Add Modal
   const openAddModal = () => {
@@ -66,29 +81,68 @@ const AssigneesPage = () => {
     const { name, email, role } = form;
     if (!name.trim() || !email.trim() || !role.trim()) return;
 
-    if (modalType === "add") {
-      setAssignees([
-        ...assignees,
-        { id: Date.now(), name: name.trim(), email: email.trim(), role: role.trim() },
-      ]);
-    } else if (modalType === "edit" && currentAssignee) {
-      setAssignees(
-        assignees.map((a) =>
-          a.id === currentAssignee.id
-            ? { ...a, name: name.trim(), email: email.trim(), role: role.trim() }
-            : a
-        )
-      );
-    }
+    const payload = { name: name.trim(), email: email.trim(), role: role.trim() };
 
-    closeModal();
+    if (modalType === "add") {
+      fetch('/assignees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to add assignee');
+          return res.json();
+        })
+        .then((newAssignee) => {
+          setAssignees((prev) => [...prev, newAssignee]);
+          closeModal();
+        })
+        .catch((err) => {
+          console.error('Failed to add assignee:', err);
+          alert('Failed to add assignee. Please try again.');
+        });
+    } else if (modalType === "edit" && currentAssignee) {
+      fetch(`/assignees/${currentAssignee._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to update assignee');
+          return res.json();
+        })
+        .then((updatedAssignee) => {
+          setAssignees((prev) =>
+            prev.map((a) => (a._id === updatedAssignee._id ? updatedAssignee : a))
+          );
+          closeModal();
+        })
+        .catch((err) => {
+          console.error('Failed to update assignee:', err);
+          alert('Failed to update assignee. Please try again.');
+        });
+    }
   };
 
   // Delete Assignee
   const handleDelete = () => {
     if (!currentAssignee) return;
-    setAssignees(assignees.filter((a) => a.id !== currentAssignee.id));
-    closeModal();
+
+    fetch(`/assignees/${currentAssignee._id}`, {
+      method: 'DELETE',
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to delete assignee');
+        return res.json();
+      })
+      .then(() => {
+        setAssignees((prev) => prev.filter((a) => a._id !== currentAssignee._id));
+        closeModal();
+      })
+      .catch((err) => {
+        console.error('Failed to delete assignee:', err);
+        alert('Failed to delete assignee. Please try again.');
+      });
   };
 
   // Get unique roles for filter options
@@ -101,6 +155,10 @@ const AssigneesPage = () => {
                           assignee.email.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesRole && matchesSearch;
   });
+
+  if (loading) {
+    return <div className="assignees-container">Loading assignees...</div>;
+  }
 
   return (
     <div className="assignees-container">
@@ -140,13 +198,13 @@ const AssigneesPage = () => {
             <th>Name</th>
             <th>Email</th>
             <th>Role</th>
-            <th></th> {/* Empty header for the three-dots column */}
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {filteredAssignees.map((assignee) => (
             <AssigneeRow
-              key={assignee.id}
+              key={assignee._id}
               assignee={assignee}
               onEdit={openEditModal}
               onDelete={openDeleteModal}
@@ -254,7 +312,6 @@ const AssigneeRow = ({ assignee, onEdit, onDelete }) => {
       <td>{assignee.role}</td>
       <td className="relative">
         <div ref={menuRef} className="inline-block relative">
-          {/* Three-dot menu button */}
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary transition-colors focus:outline-none"
@@ -278,7 +335,6 @@ const AssigneeRow = ({ assignee, onEdit, onDelete }) => {
             </svg>
           </button>
 
-          {/* Dropdown Menu */}
           {showMenu && (
             <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg z-10">
               <button

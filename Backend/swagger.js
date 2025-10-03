@@ -18,6 +18,7 @@ const options = {
       schemas: {
         Task: {
           type: 'object',
+          required: ['title', 'project'],
           properties: {
             title: {
               type: 'string',
@@ -25,9 +26,6 @@ const options = {
             status: {
               type: 'string',
               enum: ['To Do', 'In Progress', 'Done', 'Canceled'],
-            },
-            assignee: {
-              type: 'string',
             },
             priority: {
               type: 'string',
@@ -41,13 +39,13 @@ const options = {
               type: 'string',
               format: 'date-time',
             },
-            avatar: {
-              type: 'string',
-            },
             comments: {
               type: 'number',
             },
             parentTask: {
+              type: 'string',
+            },
+            project: {
               type: 'string',
             },
           },
@@ -59,6 +57,52 @@ const options = {
               type: 'string',
             },
             email: {
+              type: 'string',
+            },
+          },
+        },
+        Project: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+            },
+            description: {
+              type: 'string',
+            },
+            managerId: {
+              type: 'string',
+            },
+            startDate: {
+              type: 'string',
+              format: 'date-time',
+            },
+            endDate: {
+              type: 'string',
+              format: 'date-time',
+            },
+            priority: {
+              type: 'string',
+              enum: ['Low', 'Medium', 'High'],
+            },
+            assigneeIds: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        Assignee: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+            },
+            email: {
+              type: 'string',
+            },
+            role: {
               type: 'string',
             },
           },

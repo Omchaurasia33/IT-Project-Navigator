@@ -12,10 +12,6 @@ const taskSchema = new mongoose.Schema(
       enum: ['To Do', 'In Progress', 'Done', 'Canceled'],
       default: 'To Do',
     },
-    assignee: {
-      type: String,
-      required: true,
-    },
     priority: {
       type: String,
       enum: ['Low', 'Medium', 'High'],
@@ -29,10 +25,6 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    avatar: {
-      type: String,
-      default: '',
-    },
     comments: {
       type: Number,
       default: 0,
@@ -41,6 +33,11 @@ const taskSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Task',
       default: null,
+    },
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      required: true,
     },
   },
   { timestamps: true }

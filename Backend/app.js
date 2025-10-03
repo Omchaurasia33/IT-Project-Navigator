@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const taskRoutes = require('./routes/task'); // ✅ Add task routes
+const projectRoutes = require('./routes/project'); // Add project routes
+const assigneeRoutes = require('./routes/assignee'); // Add assignee routes
 const setupSwagger = require('./swagger'); // ✅ Add swagger setup
 
 const app = express();
@@ -20,6 +22,8 @@ mongoose
 
 // Routes
 app.use('/tasks', taskRoutes); // ✅ Mount task routes
+app.use('/projects', projectRoutes); // Mount project routes
+app.use('/assignees', assigneeRoutes); // Mount assignee routes
 
 // Root route
 app.get('/', (req, res) => {

@@ -1,5 +1,6 @@
 // controllers/taskController.js
 const Task = require('../models/Task');
+const Project = require('../models/Project');
 
 // Helper: Recursively build task tree
 async function buildTaskTree(parentId = null, filter = {}) {
@@ -13,18 +14,13 @@ async function buildTaskTree(parentId = null, filter = {}) {
 // Get all tasks as a tree (with optional filters)
 exports.getTasks = async (req, res) => {
   try {
-    const { status, assignee } = req.query;
+    const { status, projectId } = req.query;
     let filter = {};
     if (status && status !== 'all') {
       filter.status = status;
     }
-    if (assignee && assignee !== 'all') {
-      const assigneeMap = {
-        'user-1': 'Alice',
-        'user-2': 'Bob',
-        'user-3': 'Charlie',
-      };
-      filter.assignee = assigneeMap[assignee] || assignee;
+    if (projectId) {
+      filter.project = projectId;
     }
     const tree = await buildTaskTree(null, filter);
     res.json(tree);
@@ -36,9 +32,26 @@ exports.getTasks = async (req, res) => {
 // Create a new task (root or subtask)
 exports.createTask = async (req, res) => {
   try {
-    const { parentTask, ...taskData } = req.body;
-    const newTask = new Task({ ...taskData, parentTask: parentTask || null });
+    const { parentTask, project, ...taskData } = req.body;
+
+    if (!project) {
+      return res.status(400).json({ message: 'Project ID is required to create a task' });
+    }
+
+    const newTask = new Task({ ...taskData, parentTask: parentTask || null, project });
     const savedTask = await newTask.save();
+
+    // Add task to project
+    const projectToUpdate = await Project.findById(project);
+    if (!projectToUpdate) {
+      // If the project doesn't exist, we should probably roll back the task creation
+      // or handle it in some other way. For now, we'll return an error.
+      await Task.findByIdAndDelete(savedTask._id);
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    projectToUpdate.tasks.push(savedTask._id);
+    await projectToUpdate.save();
+
     res.status(201).json(savedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });

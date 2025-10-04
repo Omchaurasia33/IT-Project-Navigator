@@ -128,7 +128,7 @@ const ProjectNode = ({
 					) : (
 						<div className="relative flex h-6 w-6 shrink-0 overflow-hidden rounded-full bg-muted">
 							<span className="flex h-full w-full items-center justify-center rounded-full text-xs">
-								{node.assignee.charAt(0)}
+							{node?.assignee ? node.assignee.charAt(0) : "?"}
 							</span>
 						</div>
 					)}

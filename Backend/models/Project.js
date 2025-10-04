@@ -13,7 +13,7 @@ const projectSchema = new mongoose.Schema({
   },
   managerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Assignee',
     required: true
   },
   startDate: {
@@ -31,7 +31,7 @@ const projectSchema = new mongoose.Schema({
   },
   assigneeIds: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'Assignee'
   }],
   tasks: [{
     type: mongoose.Schema.Types.ObjectId,

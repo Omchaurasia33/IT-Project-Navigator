@@ -25,6 +25,10 @@ const ProjectsPage = () => {
     priority: "Medium",
   });
 
+  // State for Add Assignees modal
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+
   // Fetch projects and assignees for manager dropdown
   useEffect(() => {
     Promise.all([
@@ -80,6 +84,28 @@ const ProjectsPage = () => {
   const openDeleteModal = (project) => {
     setModalType("delete");
     setCurrentProject(project);
+    setIsModalOpen(true);
+  };
+
+  const openAssignModal = async (project) => {
+    setModalType("assign");
+    setCurrentProject(project);
+    // Refresh the assignee list when opening the modal
+    try {
+      const res = await fetch('/assignees');
+      if (res.ok) {
+        const list = await res.json();
+        setAssigneesForFilter(list);
+      }
+    } catch (err) {
+      console.error('Failed to refresh assignees:', err);
+    }
+    const preselected = Array.isArray(project?.assigneeIds)
+      ? project.assigneeIds
+      : Array.isArray(project?.assignees)
+        ? project.assignees.map(a => (typeof a === 'string' ? a : a._id)).filter(Boolean)
+        : [];
+    setSelectedAssigneeIds(preselected);
     setIsModalOpen(true);
   };
 
@@ -169,6 +195,50 @@ const ProjectsPage = () => {
       });
   };
 
+  // New functions for assignee assignment
+  const toggleAssigneeSelection = (id) => {
+    setSelectedAssigneeIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSaveAssignees = () => {
+    if (!currentProject) return;
+    setAssignLoading(true);
+    const p = currentProject;
+    const payload = {
+      name: p.name,
+      description: p.description || "",
+      managerId: p.managerId || null,
+      startDate: p.startDate ? new Date(p.startDate).toISOString() : null,
+      endDate: p.endDate ? new Date(p.endDate).toISOString() : null,
+      priority: p.priority || "Medium",
+      assigneeIds: selectedAssigneeIds,
+    };
+
+    fetch(`/projects/${p._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to update project assignees');
+        return res.json();
+      })
+      .then(updatedProject => {
+        setProjects(prev =>
+          prev.map(pr => (pr._id === updatedProject._id ? updatedProject : pr))
+        );
+        setAssignLoading(false);
+        closeModal();
+      })
+      .catch(err => {
+        console.error('Failed to update project assignees:', err);
+        setAssignLoading(false);
+        alert('Failed to update project assignees. Please try again.');
+      });
+  };
+
   // Get unique statuses and managers for filter options
   const uniqueStatuses = [...new Set(projects.map(p => p.status || "To Do"))];
   
@@ -243,6 +313,7 @@ const ProjectsPage = () => {
             }
             onEdit={openEditModal}
             onDelete={openDeleteModal}
+            onAddAssignees={openAssignModal}
           />
         ))}
       </div>
@@ -256,6 +327,8 @@ const ProjectsPage = () => {
                 ? "Add New Project"
                 : modalType === "edit"
                 ? "Edit Project"
+                : modalType === "assign"
+                ? "Add Assignees"
                 : "Confirm Deletion"}
             </h3>
 
@@ -268,6 +341,36 @@ const ProjectsPage = () => {
                 <div className="modal-actions">
                   <button onClick={handleDeleteProject} className="btn-delete">
                     Delete
+                  </button>
+                  <button onClick={closeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : modalType === "assign" ? (
+              <>
+                <div className="form-group">
+                  <label>Select Assignees</label>
+                  <div className="assignees-list">
+                    {assigneesForFilter && assigneesForFilter.length > 0 ? (
+                      assigneesForFilter.map((a) => (
+                        <label key={a._id} className="assignee-item">
+                          <input
+                            type="checkbox"
+                            checked={selectedAssigneeIds.includes(a._id)}
+                            onChange={() => toggleAssigneeSelection(a._id)}
+                          />
+                          <span>{a.name} • {a.email}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <p>Loading assignees...</p>
+                    )}
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button onClick={handleSaveAssignees} className="btn-save" disabled={assignLoading}>
+                    {assignLoading ? 'Saving...' : 'Save Assignees'}
                   </button>
                   <button onClick={closeModal} className="btn-cancel">
                     Cancel
@@ -358,7 +461,7 @@ const ProjectsPage = () => {
 };
 
 // Extracted ProjectCard component with three-dot menu
-const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) => {
+const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, onAddAssignees }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -376,14 +479,14 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) 
     <div className="project-card group">
       <div className="project-header" onClick={onToggleExpand}>
         <div>
-          <span className="project-name">{project.name}</span>
+          <span className="project-name">{project?.name ?? "Untitled Project"}</span>
           <span className="project-manager"> • {project.managerName}</span>
         </div>
         <div className="header-actions">
-          <span className={`priority-badge priority-${project.priority?.toLowerCase() || 'medium'}`}>
+          <span className={`priority-badge priority-${((project?.priority ?? 'Medium') + '').toLowerCase()}`}>
             {project.priority || "Medium"}
           </span>
-          <span className={`status-badge status-${(project.status || "To Do").toLowerCase().replace(" ", "-")}`}>
+          <span className={`status-badge status-${((project?.status ?? "To Do") + "").toLowerCase().replace(/\s+/g, "-")}`}>
             {project.status || "To Do"}
           </span>
 
@@ -416,6 +519,15 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) 
 
             {showMenu && (
               <div className="dropdown-menu">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddAssignees(project);
+                    setShowMenu(false);
+                  }}
+                >
+                  Add Assignees
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -453,9 +565,9 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete }) 
             {project.tasks && project.tasks.length > 0 ? (
               project.tasks.map((task) => (
                 <div key={task._id} className="task-item">
-                  <span>{task.title}</span>
-                  <span className={`task-status status-${task.status.toLowerCase().replace(" ", "-")}`}>
-                    {task.status}
+                  <span>{task?.title ?? "Untitled Task"}</span>
+                  <span className={`task-status status-${((task?.status ?? "To Do") + "").toLowerCase().replace(/\s+/g, "-")}`}>
+                    {task?.status ?? "To Do"}
                   </span>
                 </div>
               ))

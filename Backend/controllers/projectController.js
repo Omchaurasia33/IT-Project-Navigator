@@ -55,35 +55,39 @@ exports.getProjectById = async (req, res) => {
 // @access  Public
 exports.updateProject = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
-    if (project == null) {
+    // Build $set payload only with provided fields
+    const updates = {};
+    const fields = ['name', 'description', 'managerId', 'startDate', 'endDate', 'priority', 'assigneeIds'];
+    fields.forEach((key) => {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    });
+
+    // Normalize assigneeIds to an array (even if client sends a single value)
+    if (updates.assigneeIds !== undefined) {
+      if (!Array.isArray(updates.assigneeIds)) {
+        updates.assigneeIds = [updates.assigneeIds].filter(Boolean);
+      }
+    }
+
+    const updatedProject = await Project.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProject) {
       return res.status(404).json({ message: 'Cannot find project' });
     }
 
-    if (req.body.name != null) {
-      project.name = req.body.name;
-    }
-    if (req.body.description != null) {
-      project.description = req.body.description;
-    }
-    if (req.body.managerId != null) {
-      project.managerId = req.body.managerId;
-    }
-    if (req.body.startDate != null) {
-      project.startDate = req.body.startDate;
-    }
-    if (req.body.endDate != null) {
-      project.endDate = req.body.endDate;
-    }
-    if (req.body.priority != null) {
-      project.priority = req.body.priority;
-    }
-    if (req.body.assigneeIds != null) {
-      project.assigneeIds = req.body.assigneeIds;
-    }
+    // Return a populated version for consistency with GETs
+    const populated = await Project.findById(updatedProject._id)
+      .populate('tasks')
+      .populate('managerId')
+      .populate('assigneeIds');
 
-    const updatedProject = await project.save();
-    res.json(updatedProject);
+    res.json(populated || updatedProject);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

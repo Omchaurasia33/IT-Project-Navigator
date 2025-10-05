@@ -1,5 +1,6 @@
 // components/SideBar/SideBar.js
-import React, { useState } from 'react';
+import React from 'react';
+import { NavLink, Routes, Route, Navigate } from 'react-router-dom';
 import ProjectNavigator from '../ProjectNavigator/ProjectNavigator';
 import ProjectsPage from '../ProjectsPage/ProjectsPage';
 import AssigneesPage from '../AssigneesPage/AssigneesPage';
@@ -8,26 +9,13 @@ import ProfilePage from '../ProfilePage/ProfilePage';
 import './SideBar.css';
 
 const SideBar = () => {
-  const [activeTab, setActiveTab] = useState('Dashboard');
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'Dashboard':
-        return <DashboardPage />;
-      case 'Tasks':
-        return <ProjectNavigator />;
-      case 'Projects':
-        return <ProjectsPage />;
-      case 'Assignees':
-        return <AssigneesPage />;
-      case 'Profile':
-        return <ProfilePage />;
-      default:
-        return <div className="content-panel">Select a tab</div>;
-    }
-  };
-
-  const mainTabs = ['Dashboard', 'Tasks', 'Projects', 'Assignees'];
+  // Define tabs with their routes and components
+  const mainTabs = [
+    { label: 'Dashboard', path: '/dashboard', element: <DashboardPage /> },
+    { label: 'Tasks', path: '/tasks', element: <ProjectNavigator /> },
+    { label: 'Projects', path: '/projects', element: <ProjectsPage /> },
+    { label: 'Assignees', path: '/assignees', element: <AssigneesPage /> },
+  ];
 
   return (
     <div className="app-layout">
@@ -35,30 +23,47 @@ const SideBar = () => {
       <aside className="sidebar" role="navigation" aria-label="Main navigation">
         <nav className="main-nav" aria-label="Primary navigation">
           {mainTabs.map((tab) => (
-            <button
-              key={tab}
-              className={`tab-button ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-              aria-current={activeTab === tab ? 'page' : undefined}
+            <NavLink
+              key={tab.path}
+              to={tab.path}
+              className={({ isActive }) => `tab-button ${isActive ? 'active' : ''}`}
+              // Only mark Dashboard active on exact match
+              end={tab.path === '/dashboard'}
             >
-              {tab}
-            </button>
+              {tab.label}
+            </NavLink>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <button
-            className={`tab-button profile-tab ${activeTab === 'Profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Profile')}
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => `tab-button profile-tab ${isActive ? 'active' : ''}`}
             aria-label="View profile"
           >
             Profile
-          </button>
+          </NavLink>
         </div>
       </aside>
 
       {/* Main Content Area (right side) */}
-      <main className="main-content" role="main">{renderContent()}</main>
+      <main className="main-content" role="main">
+        <Routes>
+          {/* Default to /dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Main tab routes */}
+          {mainTabs.map((tab) => (
+            <Route key={tab.path} path={tab.path} element={tab.element} />
+          ))}
+
+          {/* Profile route */}
+          <Route path="/profile" element={<ProfilePage />} />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 };

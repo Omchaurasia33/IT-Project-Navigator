@@ -1,6 +1,7 @@
 // controllers/taskController.js
 const Task = require('../models/Task');
 const Project = require('../models/Project');
+const mongoose = require('mongoose');
 
 // Helper: Recursively build task tree
 async function buildTaskTree(parentId = null, filter = {}) {
@@ -26,6 +27,37 @@ exports.getTasks = async (req, res) => {
     res.json(tree);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Get a single task by ID with shaped response
+exports.getTaskById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const task = await Task.findById(id).lean();
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Shape response to the requested structure
+    const payload = {
+      _id: task._id,
+      title: task.title,
+      status: task.status,
+      assignee: task.assigneeId || null,
+      priority: task.priority,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      avatar: task.avatar || null,
+      comments: task.comments,
+      parentTask: task.parentTask,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    };
+
+    return res.json(payload);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -62,8 +94,27 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    const updatedTask = await Task.findByIdAndUpdate(id, updates, {
+
+    // Whitelist allowed fields and normalize types
+    const allowed = [
+      'title', 'status', 'priority', 'startDate', 'endDate', 'comments', 'parentTask', 'project', 'assigneeId', 'avatar'
+    ];
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
+    }
+    // Normalize assigneeId: empty string -> null; validate ObjectId
+    if (updates.hasOwnProperty('assigneeId')) {
+      if (!updates.assigneeId) {
+        updates.assigneeId = null;
+      } else if (!mongoose.Types.ObjectId.isValid(updates.assigneeId)) {
+        return res.status(400).json({ message: 'Invalid assigneeId' });
+      }
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(id, { $set: updates }, {
       new: true,
       runValidators: true,
     });

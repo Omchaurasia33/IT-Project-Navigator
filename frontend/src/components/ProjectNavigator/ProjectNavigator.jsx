@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './project-navigator.css';
 import AddEditTaskModal from './components/AddEditTaskModal';
 import ProjectNode from './components/ProjectNode';
 import GanttChart from './components/GanttChart';
 import { useTasks } from './hooks/useTasks';
 import { calculateProgress } from './utils/helpers';
+import { useSearchParams } from 'react-router-dom';
 
 const ProjectNavigator = () => {
 	const [view, setView] = useState('tree');
@@ -16,19 +17,52 @@ const ProjectNavigator = () => {
 	const [expandedNodes, setExpandedNodes] = useState([1, 2]); // Initially expanded nodes
 	const [isAddingRootTask, setIsAddingRootTask] = useState(false);
 
+	// Read projectId from URL and fetch project name for header
+	const [searchParams] = useSearchParams();
+	const projectId = searchParams.get('projectId') || searchParams.get('projectid');
+	const [projectTitle, setProjectTitle] = useState('');
+	const [projectAssignees, setProjectAssignees] = useState([]);
+
+	useEffect(() => {
+		if (!projectId) {
+			setProjectTitle('');
+			setProjectAssignees([]);
+			return;
+		}
+		fetch(`/projects/${projectId}`)
+			.then((res) => (res.ok ? res.json() : null))
+			.then((proj) => {
+				setProjectTitle(proj?.name || '');
+				const list = Array.isArray(proj?.assigneeIds) ? proj.assigneeIds : [];
+				const normalized = list
+					.map((a) => (typeof a === 'string' ? { _id: a, name: 'Unassigned' } : a))
+					.filter(Boolean);
+				setProjectAssignees(normalized);
+			})
+			.catch(() => {
+				setProjectTitle('');
+				setProjectAssignees([]);
+			});
+	}, [projectId]);
+
 	const { total, completed } = calculateProgress(tasks);
 	const progressPercentage = total > 0 ? (completed / total) * 100 : 0;
 
 	const filterTasks = (taskList) => {
+		const selectedAssigneeName =
+			assigneeFilter !== 'all'
+				? (projectAssignees.find((a) => String(a._id) === String(assigneeFilter))?.name || '')
+				: '';
+
 		return taskList.filter((task) => {
 			const statusMatch =
 				statusFilter === 'all' ||
-				task.status.toLowerCase().replace(' ', '-') === statusFilter;
+				(task.status && task.status.toLowerCase().replace(' ', '-') === statusFilter);
+
 			const assigneeMatch =
 				assigneeFilter === 'all' ||
-				(assigneeFilter === 'user-1' && task.assignee === 'Alice') ||
-				(assigneeFilter === 'user-2' && task.assignee === 'Bob') ||
-				(assigneeFilter === 'user-3' && task.assignee === 'Charlie');
+				(task.assigneeId && String(task.assigneeId) === String(assigneeFilter)) ||
+				(task.assignee && selectedAssigneeName && task.assignee === selectedAssigneeName);
 
 			if (!statusMatch && !assigneeMatch) {
 				if (task.subtasks && task.subtasks.length > 0) {
@@ -42,7 +76,23 @@ const ProjectNavigator = () => {
 		});
 	};
 
-	const filteredTasks = filterTasks(tasks);
+	const enhancedTasks = useMemo(() => {
+		const resolveName = (assigneeId, fallbackName) => {
+			if (!assigneeId) return fallbackName || '';
+			const found = projectAssignees.find((a) => String(a._id) === String(assigneeId));
+			return found?.name || fallbackName || '';
+		};
+
+		const mapTree = (list) =>
+			list.map((t) => ({
+				...t,
+				assignee: resolveName(t.assigneeId, t.assignee),
+				subtasks: t.subtasks ? mapTree(t.subtasks) : [],
+			}));
+		return mapTree(tasks || []);
+	}, [tasks, projectAssignees]);
+
+	const filteredTasks = filterTasks(enhancedTasks);
 
 	const onAddTask = (newTask, parent) => {
 		handleAddTask(newTask, parent);
@@ -83,7 +133,7 @@ const ProjectNavigator = () => {
 			<div className="container mx-auto p-4 md:p-8">
 				<header className="mb-8">
 					<h1 className="text-4xl font-bold tracking-tight mb-2 font-headline">
-						IT Project Navigator
+						{projectTitle || 'IT Project Navigator'}
 					</h1>
 					<div className="flex items-center gap-4">
 						<div className="w-1/3 bg-secondary rounded-full h-4">
@@ -112,14 +162,14 @@ const ProjectNavigator = () => {
 							<option value="canceled">Canceled</option>
 						</select>
 						<select
-							value={assigneeFilter}
-							onChange={(e) => setAssigneeFilter(e.target.value)}
-							className="w-[180px] bg-background border border-input rounded-md h-10 px-3 text-sm"
+						value={assigneeFilter}
+						onChange={(e) => setAssigneeFilter(e.target.value)}
+						className="w-[220px] bg-background border border-input rounded-md h-10 px-3 text-sm"
 						>
-							<option value="all">All Assignees</option>
-							<option value="user-1">Alice</option>
-							<option value="user-2">Bob</option>
-							<option value="user-3">Charlie</option>
+						<option value="all">All Assignees</option>
+						{projectAssignees.map((a) => (
+						<option key={a._id} value={a._id}>{a.name}</option>
+						))}
 						</select>
 					</div>
 					<button
@@ -231,6 +281,7 @@ const ProjectNavigator = () => {
 
 				{(editingTask || addingToParent !== null || isAddingRootTask) && (
 					<AddEditTaskModal
+						key={editingTask?._id || 'new'}
 						task={editingTask}
 						parentId={addingToParent}
 						onSave={editingTask ? handleEditTask : onAddTask}

@@ -1,5 +1,6 @@
 const swaggerJSDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
 
 const options = {
   definition: {
@@ -110,7 +111,7 @@ const options = {
       },
     },
   },
-  apis: ['./routes/*.js'], // files containing annotations as above
+  apis: [path.join(__dirname, './routes/*.js')], // Use absolute path to ensure correct file resolution
 };
 
 const swaggerSpec = swaggerJSDoc(options);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 const statuses = ['To Do', 'In Progress', 'Done', 'Canceled'];
-const assignees = ['Alice', 'Bob', 'Charlie', 'Unassigned'];
 
 const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 	const isEditing = !!task;
@@ -9,6 +9,7 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 		title: '',
 		status: 'To Do',
 		assignee: 'Unassigned',
+		assigneeId: '',
 		priority: 'Medium',
 		startDate: new Date().toISOString().split('T')[0],
 		endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -19,27 +20,76 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 	const [editedTask, setEditedTask] = useState(isEditing && task ? {
 		...initialTaskState,
 		...task,
+		assigneeId: task.assigneeId ? String(task.assigneeId) : '',
 		startDate: task.startDate ? task.startDate.slice(0, 10) : initialTaskState.startDate,
 		endDate: task.endDate ? task.endDate.slice(0, 10) : initialTaskState.endDate,
 	} : initialTaskState);
 
 	// Prefill modal fields when editing
+	const [searchParams] = useSearchParams();
+	const projectId = searchParams.get('projectId') || searchParams.get('projectid');
+	const [projectAssignees, setProjectAssignees] = useState([]);
+
 	useEffect(() => {
-		if (isEditing && task) {
-			setEditedTask({
-				...initialTaskState,
-				...task,
-				startDate: task.startDate ? task.startDate.slice(0, 10) : initialTaskState.startDate,
-				endDate: task.endDate ? task.endDate.slice(0, 10) : initialTaskState.endDate,
-			});
-		} else if (!isEditing) {
-			setEditedTask(initialTaskState);
-		}
+		const load = async () => {
+			try {
+				// Load assignees for this project first
+				if (projectId) {
+					const resProj = await fetch(`/projects/${projectId}`);
+					if (resProj.ok) {
+						const proj = await resProj.json();
+						const list = Array.isArray(proj?.assigneeIds) ? proj.assigneeIds : [];
+						const normalized = list
+							.map((a) => (typeof a === 'string' ? { _id: a, name: 'Unassigned' } : a))
+							.filter(Boolean);
+						setProjectAssignees(normalized);
+					}
+				}
+
+				if (isEditing && task && (task._id || task.id)) {
+					// Load individual task to prefill exactly as requested
+					const res = await fetch(`/tasks/${task._id || task.id}`);
+					if (res.ok) {
+						const t = await res.json();
+						setEditedTask({
+							...initialTaskState,
+							...t,
+							assigneeId: t.assignee ? String(t.assignee) : '',
+							startDate: t.startDate ? String(t.startDate).slice(0, 10) : initialTaskState.startDate,
+							endDate: t.endDate ? String(t.endDate).slice(0, 10) : initialTaskState.endDate,
+						});
+						return;
+					}
+				}
+
+				// Fallback to given task or new
+				if (isEditing && task) {
+					setEditedTask({
+						...initialTaskState,
+						...task,
+						assigneeId: task.assigneeId ? String(task.assigneeId) : '',
+						startDate: task.startDate ? task.startDate.slice(0, 10) : initialTaskState.startDate,
+						endDate: task.endDate ? task.endDate.slice(0, 10) : initialTaskState.endDate,
+					});
+				} else if (!isEditing) {
+					setEditedTask(initialTaskState);
+				}
+			} catch (e) {
+				setEditedTask(isEditing && task ? { ...initialTaskState, ...task } : initialTaskState);
+			}
+		};
+		load();
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [task, isEditing]);
+	}, [task, isEditing, projectId]);
 
 	const handleSave = () => {
-		onSave(editedTask, parentId);
+		// If an assigneeId is selected, map it to name as well for UI; backend will store id via hook
+		const payload = { ...editedTask };
+		if (payload.assigneeId) {
+			const found = projectAssignees.find((a) => String(a._id) === String(payload.assigneeId));
+			if (found) payload.assignee = found.name;
+		}
+		onSave(payload, parentId);
 		onClose();
 	};
 
@@ -111,17 +161,18 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 							Assignee
 						</label>
 						<select
-							value={editedTask.assignee}
-							onChange={(e) =>
-								setEditedTask({ ...editedTask, assignee: e.target.value })
-							}
-							className="w-full bg-background text-foreground rounded px-3 py-2 border border-input focus:border-ring focus:outline-none"
+						value={editedTask.assigneeId || ''}
+						onChange={(e) => {
+						const assigneeId = e.target.value;
+						const found = projectAssignees.find((a) => String(a._id) === String(assigneeId));
+						setEditedTask({ ...editedTask, assigneeId, assignee: found?.name || 'Unassigned' });
+						}}
+						className="w-full bg-background text-foreground rounded px-3 py-2 border border-input focus:border-ring focus:outline-none"
 						>
-							{assignees.map((assignee) => (
-								<option key={assignee} value={assignee}>
-									{assignee}
-								</option>
-							))}
+						<option value="">Unassigned</option>
+						{projectAssignees.map((a) => (
+						<option key={String(a._id)} value={String(a._id)}>{a.name}</option>
+						))}
 						</select>
 					</div>
 

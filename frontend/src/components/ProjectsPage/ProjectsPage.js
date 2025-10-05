@@ -1,10 +1,12 @@
 // components/ProjectsPage/ProjectsPage.js
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import "./ProjectsPage.css";
 
 const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const [expandedProject, setExpandedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -262,6 +264,10 @@ const ProjectsPage = () => {
     return statusMatch && assigneeMatch;
   });
 
+  const handleViewTasks = (projectId) => {
+    navigate(`/tasks?projectId=${projectId}`);
+  };
+
   if (loading) {
     return <div className="projects-container">Loading projects...</div>;
   }
@@ -314,6 +320,7 @@ const ProjectsPage = () => {
             onEdit={openEditModal}
             onDelete={openDeleteModal}
             onAddAssignees={openAssignModal}
+            onViewTasks={handleViewTasks}
           />
         ))}
       </div>
@@ -461,7 +468,7 @@ const ProjectsPage = () => {
 };
 
 // Extracted ProjectCard component with three-dot menu
-const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, onAddAssignees }) => {
+const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, onAddAssignees, onViewTasks }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -560,20 +567,13 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, on
             <span>Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : "—"} </span>
             <span>End: {project.endDate ? new Date(project.endDate).toLocaleDateString() : "—"}</span>
           </div>
-          <div className="task-section">
-            <h4>Tasks</h4>
-            {project.tasks && project.tasks.length > 0 ? (
-              project.tasks.map((task) => (
-                <div key={task._id} className="task-item">
-                  <span>{task?.title ?? "Untitled Task"}</span>
-                  <span className={`task-status status-${((task?.status ?? "To Do") + "").toLowerCase().replace(/\s+/g, "-")}`}>
-                    {task?.status ?? "To Do"}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="no-tasks">No tasks yet</p>
-            )}
+          <div className="actions-row">
+            <button
+              className="view-tasks-btn"
+              onClick={(e) => { e.stopPropagation(); onViewTasks(project._id); }}
+            >
+              View Tasks
+            </button>
           </div>
         </div>
       )}

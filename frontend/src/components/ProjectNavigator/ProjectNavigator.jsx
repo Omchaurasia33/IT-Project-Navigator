@@ -5,17 +5,23 @@ import ProjectNode from './components/ProjectNode';
 import GanttChart from './components/GanttChart';
 import { useTasks } from './hooks/useTasks';
 import { calculateProgress } from './utils/helpers';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const ProjectNavigator = () => {
 	const [view, setView] = useState('tree');
-	const { tasks, handleAddTask, handleEditTask, handleDeleteTask, setTasks } = useTasks();
+	const { tasks, handleAddTask, handleEditTask, handleDeleteTask, setTasks } = useTasks(undefined, true);
 	const [statusFilter, setStatusFilter] = useState('all');
 	const [assigneeFilter, setAssigneeFilter] = useState('all');
 	const [editingTask, setEditingTask] = useState(null);
 	const [addingToParent, setAddingToParent] = useState(null);
 	const [expandedNodes, setExpandedNodes] = useState([1, 2]); // Initially expanded nodes
 	const [isAddingRootTask, setIsAddingRootTask] = useState(false);
+
+	// Project selection support when no projectId in URL
+	const navigate = useNavigate();
+	const [projects, setProjects] = useState([]);
+	const [projectsLoading, setProjectsLoading] = useState(false);
+	const [selectedProjectId, setSelectedProjectId] = useState('');
 
 	// Read projectId from URL and fetch project name for header
 	const [searchParams] = useSearchParams();
@@ -27,6 +33,17 @@ const ProjectNavigator = () => {
 		if (!projectId) {
 			setProjectTitle('');
 			setProjectAssignees([]);
+			setProjectsLoading(true);
+			fetch('/projects')
+				.then((res) => (res.ok ? res.json() : []))
+				.then((list) => {
+					setProjects(Array.isArray(list) ? list : []);
+					setProjectsLoading(false);
+				})
+				.catch(() => {
+					setProjects([]);
+					setProjectsLoading(false);
+				});
 			return;
 		}
 		fetch(`/projects/${projectId}`)
@@ -44,6 +61,14 @@ const ProjectNavigator = () => {
 				setProjectAssignees([]);
 			});
 	}, [projectId]);
+
+	// Default to first project when options load and none selected yet
+	useEffect(() => {
+		if (!projectId && projects.length > 0 && !selectedProjectId) {
+			setSelectedProjectId(String(projects[0]._id));
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [projects, projectId]);
 
 	const { total, completed } = calculateProgress(tasks);
 	const progressPercentage = total > 0 ? (completed / total) * 100 : 0;
@@ -127,6 +152,41 @@ const ProjectNavigator = () => {
 		setAddingToParent(null);
 		setIsAddingRootTask(false);
 	};
+
+	// If no projectId in URL, show project selector UI
+	if (!projectId) {
+		return (
+			<div className="min-h-screen bg-background text-foreground font-body antialiased">
+				<div className="container mx-auto p-4 md:p-8">
+					<header className="mb-8">
+						<h1 className="text-4xl font-bold tracking-tight mb-2 font-headline">Select a Project</h1>
+						<p className="text-muted-foreground">Choose a project to view its tasks.</p>
+					</header>
+					<div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+						<select
+							value={selectedProjectId}
+							onChange={(e) => setSelectedProjectId(e.target.value)}
+							className="w-full sm:w-[360px] bg-background border border-input rounded-md h-10 px-3 text-sm"
+							disabled={projectsLoading}
+						>
+							{projectsLoading && <option>Loading projects...</option>}
+							{!projectsLoading && projects.length === 0 && <option>No projects available</option>}
+							{!projectsLoading && projects.map((p) => (
+								<option key={String(p._id)} value={String(p._id)}>{p.name}</option>
+							))}
+						</select>
+						<button
+							onClick={() => selectedProjectId && navigate(`/tasks?projectId=${selectedProjectId}`)}
+							disabled={!selectedProjectId || projectsLoading}
+							className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+						>
+							View Tasks
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-background text-foreground font-body antialiased">

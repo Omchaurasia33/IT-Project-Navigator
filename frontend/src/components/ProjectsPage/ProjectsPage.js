@@ -75,7 +75,7 @@ const ProjectsPage = () => {
     setForm({
       name: project.name,
       description: project.description || "",
-      managerId: project.managerId || "",
+      managerId: (project.managerId && typeof project.managerId === 'object') ? (project.managerId._id || "") : (project.managerId || ""),
       startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : "",
       endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : "",
       priority: project.priority || "Medium",
@@ -102,11 +102,12 @@ const ProjectsPage = () => {
     } catch (err) {
       console.error('Failed to refresh assignees:', err);
     }
-    const preselected = Array.isArray(project?.assigneeIds)
+    const preselectedRaw = Array.isArray(project?.assigneeIds)
       ? project.assigneeIds
       : Array.isArray(project?.assignees)
         ? project.assignees.map(a => (typeof a === 'string' ? a : a._id)).filter(Boolean)
         : [];
+    const preselected = preselectedRaw.map(v => String((v && v._id) ? v._id : v)).filter(Boolean);
     setSelectedAssigneeIds(preselected);
     setIsModalOpen(true);
   };
@@ -132,8 +133,7 @@ const ProjectsPage = () => {
       managerId: managerId || null,
       startDate: startDate ? new Date(startDate).toISOString() : null,
       endDate: endDate ? new Date(endDate).toISOString() : null,
-      priority,
-      assigneeIds: [], // You can extend this later with multi-select
+      priority
     };
 
     if (modalType === "add") {
@@ -199,8 +199,9 @@ const ProjectsPage = () => {
 
   // New functions for assignee assignment
   const toggleAssigneeSelection = (id) => {
+    const key = String((id && id._id) ? id._id : id);
     setSelectedAssigneeIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
     );
   };
 
@@ -251,16 +252,20 @@ const ProjectsPage = () => {
 
   // Filter projects based on selected filters
   const filteredProjects = projects.map(project => {
-    // Resolve manager name for display
-    const managerAssignee = assigneesForFilter.find(a => a._id === project.managerId);
+    // Normalize managerId and resolve manager name whether populated or id
+    const managerObj = (project.managerId && typeof project.managerId === 'object') ? project.managerId : null;
+    const managerIdStr = managerObj ? String(managerObj._id) : (project.managerId ? String(project.managerId) : '');
+    const managerFromDir = assigneesForFilter.find(a => String(a._id) === managerIdStr);
     return {
       ...project,
-      managerName: managerAssignee ? managerAssignee.name : "Unassigned"
+      managerName: managerObj?.name || managerFromDir?.name || "Unassigned",
+      _managerIdStr: managerIdStr,
     };
   }).filter(project => {
     const statusMatch = statusFilter === "All" || (project.status || "To Do") === statusFilter;
+    const managerIdStr = (project.managerId && typeof project.managerId === 'object') ? String(project.managerId._id) : (project.managerId ? String(project.managerId) : '');
     const assigneeMatch = assigneeFilter === "All" || 
-      (assigneeFilter === "Unassigned" ? !project.managerId : project.managerId === assigneeFilter);
+      (assigneeFilter === "Unassigned" ? !managerIdStr : String(managerIdStr) === String(assigneeFilter));
     return statusMatch && assigneeMatch;
   });
 
@@ -295,7 +300,7 @@ const ProjectsPage = () => {
             onChange={(e) => setAssigneeFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="All">All Assignees</option>
+            <option value="All">All Project Manager</option>
             <option value="Unassigned">Unassigned</option>
             {uniqueManagers.map(manager => (
               <option key={manager.id} value={manager.id}>{manager.name}</option>
@@ -364,11 +369,16 @@ const ProjectsPage = () => {
                       assigneesForFilter.map((a) => (
                         <label key={a._id} className="assignee-item">
                           <input
-                            type="checkbox"
-                            checked={selectedAssigneeIds.includes(a._id)}
-                            onChange={() => toggleAssigneeSelection(a._id)}
+                          type="checkbox"
+                          style={{ width: '10%' }}
+                          checked={selectedAssigneeIds.includes(String(a._id))}
+                          onChange={() => toggleAssigneeSelection(a._id)}
                           />
-                          <span>{a.name} • {a.email}</span>
+                          <span>
+                            {a.name}
+                            {a.email ? ` • ${a.email}` : ''}
+                            {a.role ? ` • ${a.role}` : ''}
+                          </span>
                         </label>
                       ))
                     ) : (
@@ -598,13 +608,14 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, on
             {normalizedAssignees.length > 0 ? (
               <ul className="assignees-grid" style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '8px' }}>
                 {normalizedAssignees.map((a) => (
-                  <li key={a._id} className="assignee-chip" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', border: '1px solid var(--border, #e5e7eb)', borderRadius: '8px' }} title={`${a.name}${a.email ? ' • ' + a.email : ''}`}>
+                  <li key={a._id} className="assignee-chip" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', border: '1px solid var(--border, #e5e7eb)', borderRadius: '8px' }} title={`${a.name}${a.email ? ' • ' + a.email : ''}${a.role ? ' • ' + a.role : ''}`}>
                     <div className="assignee-avatar" style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--muted, #f3f4f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600 }}>
                       <span>{getInitials(a.name)}</span>
                     </div>
                     <div className="assignee-info" style={{ display: 'flex', flexDirection: 'column' }}>
                       <div className="assignee-name" style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div>
                       {a.email && <div className="assignee-email" style={{ fontSize: 12, color: 'var(--muted-foreground, #6b7280)' }}>{a.email}</div>}
+                      {a.role && <div className="assignee-role" style={{ fontSize: 12, color: 'var(--muted-foreground, #6b7280)' }}>{a.role}</div>}
                     </div>
                   </li>
                 ))}

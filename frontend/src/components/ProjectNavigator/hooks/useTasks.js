@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-export const useTasks = () => {
+// Optional params:
+// - overrideProjectId: string | undefined -> force a specific project id
+// - requireProject: boolean -> if true, don't fetch when no project id is set
+export const useTasks = (overrideProjectId, requireProject = false) => {
     const [tasks, setTasks] = useState([]);
     const location = useLocation();
 
     // helper to read query params
     const params = new URLSearchParams(location.search);
-    const projectId = params.get('projectId') || params.get('projectid') || '';
+    const urlProjectId = params.get('projectId') || params.get('projectid') || '';
+    const projectId = overrideProjectId || urlProjectId;
 
     const fetchTasks = () => {
+        if (requireProject && !projectId) {
+            setTasks([]);
+            return Promise.resolve();
+        }
         const url = projectId ? `/tasks?projectId=${encodeURIComponent(projectId)}` : '/tasks';
         return fetch(url)
             .then((res) => res.json())

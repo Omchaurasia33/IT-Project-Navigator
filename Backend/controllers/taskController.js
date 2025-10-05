@@ -70,14 +70,23 @@ exports.createTask = async (req, res) => {
       return res.status(400).json({ message: 'Project ID is required to create a task' });
     }
 
-    const newTask = new Task({ ...taskData, parentTask: parentTask || null, project });
+    // Normalize and validate fields
+    const payload = { ...taskData };
+    if (Object.prototype.hasOwnProperty.call(payload, 'assigneeId')) {
+      if (!payload.assigneeId) {
+        payload.assigneeId = null;
+      } else if (!mongoose.Types.ObjectId.isValid(payload.assigneeId)) {
+        return res.status(400).json({ message: 'Invalid assigneeId' });
+      }
+    }
+
+    const newTask = new Task({ ...payload, parentTask: parentTask || null, project });
     const savedTask = await newTask.save();
 
     // Add task to project
     const projectToUpdate = await Project.findById(project);
     if (!projectToUpdate) {
-      // If the project doesn't exist, we should probably roll back the task creation
-      // or handle it in some other way. For now, we'll return an error.
+      // If the project doesn't exist, rollback the task creation
       await Task.findByIdAndDelete(savedTask._id);
       return res.status(404).json({ message: 'Project not found' });
     }

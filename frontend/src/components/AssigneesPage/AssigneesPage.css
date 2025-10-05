@@ -113,7 +113,7 @@
 }
 
 .form-group label {
-  display: block;
+  display: flex ;
   margin-bottom: 6px;
   font-weight: 500;
   color: #111827;

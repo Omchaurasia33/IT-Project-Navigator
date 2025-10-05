@@ -471,3 +471,6 @@
     transition: all 0.2s 
 ease-in-out;
 }
+.assignees-section{
+  color:#000;
+}

@@ -321,6 +321,7 @@ const ProjectsPage = () => {
             onDelete={openDeleteModal}
             onAddAssignees={openAssignModal}
             onViewTasks={handleViewTasks}
+            assigneesDirectory={assigneesForFilter}
           />
         ))}
       </div>
@@ -468,7 +469,7 @@ const ProjectsPage = () => {
 };
 
 // Extracted ProjectCard component with three-dot menu
-const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, onAddAssignees, onViewTasks }) => {
+const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, onAddAssignees, onViewTasks, assigneesDirectory }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -481,6 +482,22 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, on
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Build normalized assignees list using directory
+  const directory = Array.isArray(assigneesDirectory) ? assigneesDirectory : [];
+  const rawAssignees = Array.isArray(project?.assigneeIds)
+    ? project.assigneeIds
+    : (Array.isArray(project?.assignees) ? project.assignees : []);
+  const normalizedAssignees = rawAssignees.map((a) => {
+    if (a && typeof a === 'object') return a;
+    const found = directory.find((x) => String(x._id) === String(a));
+    return found || null;
+  }).filter(Boolean);
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const parts = String(name).trim().split(/\s+/);
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase();
+  };
 
   return (
     <div className="project-card group">
@@ -567,6 +584,36 @@ const ProjectCard = ({ project, isExpanded, onToggleExpand, onEdit, onDelete, on
             <span>Start: {project.startDate ? new Date(project.startDate).toLocaleDateString() : "—"} </span>
             <span>End: {project.endDate ? new Date(project.endDate).toLocaleDateString() : "—"}</span>
           </div>
+
+          <div className="assignees-section">
+            <div className="assignees-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ margin: 0 }}>Assignees</h4>
+              <button
+                className="manage-assignees-btn"
+                onClick={(e) => { e.stopPropagation(); onAddAssignees(project); }}
+              >
+                Manage
+              </button>
+            </div>
+            {normalizedAssignees.length > 0 ? (
+              <ul className="assignees-grid" style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '8px' }}>
+                {normalizedAssignees.map((a) => (
+                  <li key={a._id} className="assignee-chip" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', border: '1px solid var(--border, #e5e7eb)', borderRadius: '8px' }} title={`${a.name}${a.email ? ' • ' + a.email : ''}`}>
+                    <div className="assignee-avatar" style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--muted, #f3f4f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600 }}>
+                      <span>{getInitials(a.name)}</span>
+                    </div>
+                    <div className="assignee-info" style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div className="assignee-name" style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div>
+                      {a.email && <div className="assignee-email" style={{ fontSize: 12, color: 'var(--muted-foreground, #6b7280)' }}>{a.email}</div>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-assignees" style={{ marginTop: 8 }}>No assignees yet</p>
+            )}
+          </div>
+
           <div className="actions-row">
             <button
               className="view-tasks-btn"

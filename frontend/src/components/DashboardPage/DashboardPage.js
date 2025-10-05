@@ -1,5 +1,5 @@
 // components/DashboardPage/DashboardPage.js
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer
@@ -7,43 +7,44 @@ import {
 import "./DashboardPage.css";
 
 const DashboardPage = () => {
-  // Dummy data – simulate real project system
-  const projects = [
-    { id: 1, name: "Project Management Module", status: "In Progress", tasks: 8 },
-    { id: 2, name: "Website Revamp", status: "To Do", tasks: 5 },
-    { id: 3, name: "Mobile App", status: "In Progress", tasks: 6 },
-    { id: 4, name: "API Integration", status: "Completed", tasks: 4 },
-  ];
+  // State from backend
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [totals, setTotals] = useState({ projects: 0, tasks: 0, assignees: 0, completedProjects: 0 });
+  const [taskStats, setTaskStats] = useState([]);
+  const [projectStats, setProjectStats] = useState([]);
+  const [assigneeWorkload, setAssigneeWorkload] = useState([]);
 
-  const assignees = [
-    { id: 1, name: "John Doe", tasks: 6 },
-    { id: 2, name: "Jane Smith", tasks: 5 },
-    { id: 3, name: "Alex Johnson", tasks: 4 },
-  ];
-
-  // Derive stats
-  const totalProjects = projects.length;
-  const totalTasks = projects.reduce((sum, p) => sum + p.tasks, 0);
-  const totalAssignees = assignees.length;
-  const completedProjects = projects.filter(p => p.status === "Completed").length;
-
-  // Task status breakdown
-  const taskStats = [
-    { name: "To Do", value: 7 },
-    { name: "In Progress", value: 6 },
-    { name: "Completed", value: 4 },
-  ];
-
-  // Project task counts
-  const projectStats = projects.map(p => ({ name: p.name, tasks: p.tasks }));
-
-  // Assignee workload
-  const assigneeWorkload = assignees;
+  useEffect(() => {
+    fetch('/dashboard/summary')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load dashboard');
+        return res.json();
+      })
+      .then(data => {
+        setTotals(data.totals || { projects: 0, tasks: 0, assignees: 0, completedProjects: 0 });
+        setTaskStats(Array.isArray(data.taskStatus) ? data.taskStatus : []);
+        setProjectStats(Array.isArray(data.tasksPerProject) ? data.tasksPerProject : []);
+        setAssigneeWorkload(Array.isArray(data.assigneeWorkload) ? data.assigneeWorkload : []);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to load dashboard');
+        setLoading(false);
+      });
+  }, []);
 
   // Colors
   const TASK_COLORS = ["#f87171", "#fbbf24", "#34d399"]; // red, amber, emerald
   const BAR_COLOR = "#3b82f6"; // blue-500
   const WORKLOAD_COLOR = "#10b981"; // emerald-500
+
+  if (loading) {
+    return <div className="dashboard-container"><h2>Dashboard Overview</h2><p>Loading...</p></div>;
+  }
+  if (error) {
+    return <div className="dashboard-container"><h2>Dashboard Overview</h2><p style={{color: 'red'}}>{error}</p></div>;
+  }
 
   return (
     <div className="dashboard-container">
@@ -53,19 +54,19 @@ const DashboardPage = () => {
       <div className="kpi-cards">
         <div className="kpi-card">
           <h3>Total Projects</h3>
-          <p className="kpi-value">{totalProjects}</p>
+          <p className="kpi-value">{totals.projects}</p>
         </div>
         <div className="kpi-card">
           <h3>Total Tasks</h3>
-          <p className="kpi-value">{totalTasks}</p>
+          <p className="kpi-value">{totals.tasks}</p>
         </div>
         <div className="kpi-card">
           <h3>Team Members</h3>
-          <p className="kpi-value">{totalAssignees}</p>
+          <p className="kpi-value">{totals.assignees}</p>
         </div>
         <div className="kpi-card">
           <h3>Completed</h3>
-          <p className="kpi-value">{completedProjects}</p>
+          <p className="kpi-value">{totals.completedProjects}</p>
         </div>
       </div>
 

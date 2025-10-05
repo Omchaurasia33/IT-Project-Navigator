@@ -6,6 +6,7 @@ const taskRoutes = require('./routes/task'); // ✅ Add task routes
 const projectRoutes = require('./routes/project'); // Add project routes
 const assigneeRoutes = require('./routes/assignee'); // Add assignee routes
 const setupSwagger = require('./swagger'); // ✅ Add swagger setup
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ mongoose
 app.use('/tasks', taskRoutes); // ✅ Mount task routes
 app.use('/projects', projectRoutes); // Mount project routes
 app.use('/assignees', assigneeRoutes); // Mount assignee routes
+app.use('/dashboard', dashboardRoutes); // Mount dashboard routes
 
 // Root route
 app.get('/', (req, res) => {

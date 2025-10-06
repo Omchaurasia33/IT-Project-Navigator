@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { apiFetch } from '../../../lib/api';
 
 const statuses = ['To Do', 'In Progress', 'Done', 'Canceled'];
 
@@ -35,7 +36,7 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 			try {
 				// Load assignees for this project first
 				if (projectId) {
-					const resProj = await fetch(`/projects/${projectId}`);
+					const resProj = await apiFetch(`/projects/${projectId}`);
 					if (resProj.ok) {
 						const proj = await resProj.json();
 						const list = Array.isArray(proj?.assigneeIds) ? proj.assigneeIds : [];
@@ -48,7 +49,7 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 
 				if (isEditing && task && (task._id || task.id)) {
 					// Load individual task to prefill exactly as requested
-					const res = await fetch(`/tasks/${task._id || task.id}`);
+					const res = await apiFetch(`/tasks/${task._id || task.id}`);
 					if (res.ok) {
 						const t = await res.json();
 						setEditedTask({
@@ -86,7 +87,7 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 		// If an assigneeId is selected, map it to name as well for UI; backend will store id via hook
 		const payload = { ...editedTask };
 		if (payload.assigneeId) {
-			const found = projectAssignees.find((a) => String(a._id) === String(payload.assigneeId));
+			const found = projectAssignees.find((a) => a && String(a._id) === String(payload.assigneeId));
 			if (found) payload.assignee = found.name;
 		}
 		onSave(payload, parentId);
@@ -164,7 +165,7 @@ const AddEditTaskModal = ({ task, parentId, onSave, onClose }) => {
 						value={editedTask.assigneeId || ''}
 						onChange={(e) => {
 						const assigneeId = e.target.value;
-						const found = projectAssignees.find((a) => String(a._id) === String(assigneeId));
+						const found = projectAssignees.find((a) => a && String(a._id) === String(assigneeId));
 						setEditedTask({ ...editedTask, assigneeId, assignee: found?.name || 'Unassigned' });
 						}}
 						className="w-full bg-background text-foreground rounded px-3 py-2 border border-input focus:border-ring focus:outline-none"

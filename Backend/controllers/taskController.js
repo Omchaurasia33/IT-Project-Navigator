@@ -3,7 +3,7 @@ const Task = require('../models/Task');
 const Project = require('../models/Project');
 const mongoose = require('mongoose');
 
-// Helper: Recursively build task tree
+// Helper: Recursively build task tree (tenant-aware)
 async function buildTaskTree(parentId = null, filter = {}) {
   const tasks = await Task.find({ parentTask: parentId, ...filter }).lean();
   for (let task of tasks) {
@@ -12,11 +12,11 @@ async function buildTaskTree(parentId = null, filter = {}) {
   return tasks;
 }
 
-// Get all tasks as a tree (with optional filters)
+// Get all tasks as a tree (tenant-aware, with optional filters)
 exports.getTasks = async (req, res) => {
   try {
     const { status, projectId } = req.query;
-    let filter = {};
+    let filter = { tenant: req.tenantId };
     if (status && status !== 'all') {
       filter.status = status;
     }
@@ -30,11 +30,14 @@ exports.getTasks = async (req, res) => {
   }
 };
 
-// Get a single task by ID with shaped response
+// Get a single task by ID with shaped response (tenant-aware)
 exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
-    const task = await Task.findById(id).lean();
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
+    const task = await Task.findOne({ _id: id, tenant: req.tenantId }).lean();
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -61,14 +64,19 @@ exports.getTaskById = async (req, res) => {
   }
 };
 
-// Create a new task (root or subtask)
+// Create a new task (root or subtask) (tenant-aware)
 exports.createTask = async (req, res) => {
   try {
+    const tenantId = req.tenantId;
     const { parentTask, project, ...taskData } = req.body;
 
     if (!project) {
       return res.status(400).json({ message: 'Project ID is required to create a task' });
     }
+
+    // Ensure project is in the same tenant
+    const projectDoc = await Project.findOne({ _id: project, tenant: tenantId });
+    if (!projectDoc) return res.status(404).json({ message: 'Project not found' });
 
     // Normalize and validate fields
     const payload = { ...taskData };
@@ -80,18 +88,12 @@ exports.createTask = async (req, res) => {
       }
     }
 
-    const newTask = new Task({ ...payload, parentTask: parentTask || null, project });
+    const newTask = new Task({ ...payload, tenant: tenantId, parentTask: parentTask || null, project });
     const savedTask = await newTask.save();
 
     // Add task to project
-    const projectToUpdate = await Project.findById(project);
-    if (!projectToUpdate) {
-      // If the project doesn't exist, rollback the task creation
-      await Task.findByIdAndDelete(savedTask._id);
-      return res.status(404).json({ message: 'Project not found' });
-    }
-    projectToUpdate.tasks.push(savedTask._id);
-    await projectToUpdate.save();
+    projectDoc.tasks.push(savedTask._id);
+    await projectDoc.save();
 
     res.status(201).json(savedTask);
   } catch (error) {
@@ -99,10 +101,13 @@ exports.createTask = async (req, res) => {
   }
 };
 
-// Update a task
+// Update a task (tenant-aware)
 exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
 
     // Whitelist allowed fields and normalize types
     const allowed = [
@@ -123,7 +128,7 @@ exports.updateTask = async (req, res) => {
       }
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(id, { $set: updates }, {
+    const updatedTask = await Task.findOneAndUpdate({ _id: id, tenant: req.tenantId }, { $set: updates }, {
       new: true,
       runValidators: true,
     });
@@ -136,36 +141,39 @@ exports.updateTask = async (req, res) => {
   }
 };
 
-// Delete a task and all its subtasks recursively
-async function deleteTaskAndSubtasks(taskId) {
+// Delete a task and all its subtasks recursively (tenant-aware)
+async function deleteTaskAndSubtasks(taskId, tenantId) {
   if (!taskId) {
     return; // Safeguard against deleting all tasks
   }
-  const subtasks = await Task.find({ parentTask: taskId });
+  const subtasks = await Task.find({ parentTask: taskId, tenant: tenantId });
   for (let sub of subtasks) {
-    await deleteTaskAndSubtasks(sub._id);
+    await deleteTaskAndSubtasks(sub._id, tenantId);
   }
-  await Task.findByIdAndDelete(taskId);
+  await Task.deleteOne({ _id: taskId, tenant: tenantId });
 }
 
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const task = await Task.findById(id);
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
+    const task = await Task.findOne({ _id: id, tenant: req.tenantId });
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    await deleteTaskAndSubtasks(task._id);
+    await deleteTaskAndSubtasks(task._id, req.tenantId);
     res.json({ message: 'Task and its subtasks deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get progress stats (recursive)
+// Get progress stats (recursive, tenant-aware)
 exports.getProgress = async (req, res) => {
   try {
-    const tree = await buildTaskTree();
+    const tree = await buildTaskTree(null, { tenant: req.tenantId });
     let total = 0;
     let completed = 0;
     function countTasks(tasks) {

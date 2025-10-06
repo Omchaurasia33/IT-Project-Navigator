@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { apiFetch } from '../../../lib/api';
 
 // Optional params:
 // - overrideProjectId: string | undefined -> force a specific project id
@@ -19,7 +20,7 @@ export const useTasks = (overrideProjectId, requireProject = false) => {
             return Promise.resolve();
         }
         const url = projectId ? `/tasks?projectId=${encodeURIComponent(projectId)}` : '/tasks';
-        return fetch(url)
+        return apiFetch(url)
             .then((res) => res.json())
             .then((data) => setTasks(data))
             .catch((err) => console.error('Failed to fetch tasks:', err));
@@ -33,7 +34,7 @@ export const useTasks = (overrideProjectId, requireProject = false) => {
     const handleAddTask = (newTask, parent) => {
         const payloadBase = parent && parent._id ? { ...newTask, parentTask: parent._id } : newTask;
         const payload = projectId ? { ...payloadBase, project: projectId } : payloadBase;
-        fetch('/tasks', {
+        apiFetch('/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -44,7 +45,7 @@ export const useTasks = (overrideProjectId, requireProject = false) => {
     };
 
     const handleEditTask = (updatedTask) => {
-        fetch(`/tasks/${updatedTask._id || updatedTask.id}`, {
+        apiFetch(`/tasks/${updatedTask._id || updatedTask.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedTask),
@@ -55,7 +56,7 @@ export const useTasks = (overrideProjectId, requireProject = false) => {
     };
 
     const handleDeleteTask = (taskId) => {
-        fetch(`/tasks/${taskId}`, {
+        apiFetch(`/tasks/${taskId}`, {
             method: 'DELETE',
         })
             .then((res) => res.json())

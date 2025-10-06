@@ -1,5 +1,6 @@
 // components/AssigneesPage/AssigneesPage.js
 import React, { useState, useRef, useEffect } from "react";
+import { apiFetch } from "../../lib/api";
 import "./AssigneesPage.css";
 
 const AssigneesPage = () => {
@@ -23,7 +24,7 @@ const AssigneesPage = () => {
 
   // Fetch assignees on mount
   useEffect(() => {
-    fetch('/assignees')
+    apiFetch('/assignees')
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch assignees');
         return res.json();
@@ -84,7 +85,7 @@ const AssigneesPage = () => {
     const payload = { name: name.trim(), email: email.trim(), role: role.trim() };
 
     if (modalType === "add") {
-      fetch('/assignees', {
+      apiFetch('/assignees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -101,8 +102,7 @@ const AssigneesPage = () => {
           console.error('Failed to add assignee:', err);
           alert('Failed to add assignee. Please try again.');
         });
-    } else if (modalType === "edit" && currentAssignee) {
-      fetch(`/assignees/${currentAssignee._id}`, {
+apiFetch(`/assignees/${currentAssignee._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -128,7 +128,7 @@ const AssigneesPage = () => {
   const handleDelete = () => {
     if (!currentAssignee) return;
 
-    fetch(`/assignees/${currentAssignee._id}`, {
+    apiFetch(`/assignees/${currentAssignee._id}`, {
       method: 'DELETE',
     })
       .then((res) => {

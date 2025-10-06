@@ -1,6 +1,7 @@
 // components/ProjectsPage/ProjectsPage.js
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from "../../lib/api";
 import "./ProjectsPage.css";
 
 const ProjectsPage = () => {
@@ -34,11 +35,11 @@ const ProjectsPage = () => {
   // Fetch projects and assignees for manager dropdown
   useEffect(() => {
     Promise.all([
-      fetch('/projects').then(res => {
+      apiFetch('/projects').then(res => {
         if (!res.ok) throw new Error('Failed to fetch projects');
         return res.json();
       }),
-      fetch('/assignees').then(res => {
+      apiFetch('/assignees').then(res => {
         if (!res.ok) throw new Error('Failed to fetch assignees');
         return res.json();
       })
@@ -94,7 +95,7 @@ const ProjectsPage = () => {
     setCurrentProject(project);
     // Refresh the assignee list when opening the modal
     try {
-      const res = await fetch('/assignees');
+      const res = await apiFetch('/assignees');
       if (res.ok) {
         const list = await res.json();
         setAssigneesForFilter(list);
@@ -137,7 +138,7 @@ const ProjectsPage = () => {
     };
 
     if (modalType === "add") {
-      fetch('/projects', {
+      apiFetch('/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -155,7 +156,8 @@ const ProjectsPage = () => {
           alert('Failed to add project. Please try again.');
         });
     } else if (modalType === "edit" && currentProject) {
-      fetch(`/projects/${currentProject._id}`, {
+      // FIX: Changed fetch to apiFetch to include auth headers
+      apiFetch(`/projects/${currentProject._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -180,12 +182,14 @@ const ProjectsPage = () => {
   const handleDeleteProject = () => {
     if (!currentProject) return;
 
-    fetch(`/projects/${currentProject._id}`, {
+    // FIX: Changed fetch to apiFetch to include auth headers
+    apiFetch(`/projects/${currentProject._id}`, {
       method: 'DELETE',
     })
       .then(res => {
         if (!res.ok) throw new Error('Failed to delete project');
-        return res.json();
+        // DELETE might not return a body, check for that
+        return res.status === 204 ? {} : res.json();
       })
       .then(() => {
         setProjects(prev => prev.filter(p => p._id !== currentProject._id));
@@ -219,7 +223,8 @@ const ProjectsPage = () => {
       assigneeIds: selectedAssigneeIds,
     };
 
-    fetch(`/projects/${p._id}`, {
+    // FIX: Changed fetch to apiFetch to include auth headers
+    apiFetch(`/projects/${p._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

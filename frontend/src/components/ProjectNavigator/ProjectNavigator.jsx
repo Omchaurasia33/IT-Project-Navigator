@@ -6,6 +6,7 @@ import GanttChart from './components/GanttChart';
 import { useTasks } from './hooks/useTasks';
 import { calculateProgress } from './utils/helpers';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../lib/api';
 
 const ProjectNavigator = () => {
 	const [view, setView] = useState('tree');
@@ -34,7 +35,7 @@ const ProjectNavigator = () => {
 			setProjectTitle('');
 			setProjectAssignees([]);
 			setProjectsLoading(true);
-			fetch('/projects')
+			apiFetch('/projects')
 				.then((res) => (res.ok ? res.json() : []))
 				.then((list) => {
 					setProjects(Array.isArray(list) ? list : []);
@@ -46,7 +47,7 @@ const ProjectNavigator = () => {
 				});
 			return;
 		}
-		fetch(`/projects/${projectId}`)
+		apiFetch(`/projects/${projectId}`)
 			.then((res) => (res.ok ? res.json() : null))
 			.then((proj) => {
 				setProjectTitle(proj?.name || '');

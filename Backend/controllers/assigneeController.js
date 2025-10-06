@@ -1,14 +1,15 @@
 const Assignee = require('../models/Assignee');
 
-// @desc    Create a new assignee
-// @route   POST /api/assignees
-// @access  Public
+// @desc    Create a new assignee (tenant-aware)
+// @route   POST /assignees
+// @access  Protected
 exports.createAssignee = async (req, res) => {
   try {
     const assignee = new Assignee({
+      tenant: req.tenantId,
       name: req.body.name,
       email: req.body.email,
-      role: req.body.role
+      role: req.body.role,
     });
     const newAssignee = await assignee.save();
     res.status(201).json(newAssignee);
@@ -17,24 +18,24 @@ exports.createAssignee = async (req, res) => {
   }
 };
 
-// @desc    Get all assignees
-// @route   GET /api/assignees
-// @access  Public
+// @desc    Get all assignees (tenant-aware)
+// @route   GET /assignees
+// @access  Protected
 exports.getAssignees = async (req, res) => {
   try {
-    const assignees = await Assignee.find();
+    const assignees = await Assignee.find({ tenant: req.tenantId });
     res.json(assignees);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// @desc    Get a single assignee
-// @route   GET /api/assignees/:id
-// @access  Public
+// @desc    Get a single assignee (tenant-aware)
+// @route   GET /assignees/:id
+// @access  Protected
 exports.getAssigneeById = async (req, res) => {
   try {
-    const assignee = await Assignee.findById(req.params.id);
+    const assignee = await Assignee.findOne({ _id: req.params.id, tenant: req.tenantId });
     if (assignee == null) {
       return res.status(404).json({ message: 'Cannot find assignee' });
     }
@@ -44,12 +45,12 @@ exports.getAssigneeById = async (req, res) => {
   }
 };
 
-// @desc    Update an assignee
-// @route   PUT /api/assignees/:id
-// @access  Public
+// @desc    Update an assignee (tenant-aware)
+// @route   PUT /assignees/:id
+// @access  Protected
 exports.updateAssignee = async (req, res) => {
   try {
-    const assignee = await Assignee.findById(req.params.id);
+    const assignee = await Assignee.findOne({ _id: req.params.id, tenant: req.tenantId });
     if (assignee == null) {
       return res.status(404).json({ message: 'Cannot find assignee' });
     }
@@ -71,17 +72,17 @@ exports.updateAssignee = async (req, res) => {
   }
 };
 
-// @desc    Delete an assignee
-// @route   DELETE /api/assignees/:id
-// @access  Public
+// @desc    Delete an assignee (tenant-aware)
+// @route   DELETE /assignees/:id
+// @access  Protected
 exports.deleteAssignee = async (req, res) => {
   try {
-    const assignee = await Assignee.findById(req.params.id);
+    const assignee = await Assignee.findOne({ _id: req.params.id, tenant: req.tenantId });
     if (assignee == null) {
       return res.status(404).json({ message: 'Cannot find assignee' });
     }
 
-    await Assignee.deleteOne({ _id: req.params.id });
+    await Assignee.deleteOne({ _id: req.params.id, tenant: req.tenantId });
     res.json({ message: 'Deleted Assignee' });
   } catch (err) {
     res.status(500).json({ message: err.message });

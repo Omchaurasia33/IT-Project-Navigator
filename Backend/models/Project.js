@@ -1,45 +1,58 @@
 const mongoose = require('mongoose');
 
-const projectSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const projectSchema = new mongoose.Schema(
+  {
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Tenant',
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    managerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Assignee',
+      required: true,
+    },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    priority: {
+      type: String,
+      enum: ['Low', 'Medium', 'High'],
+      default: 'Medium',
+    },
+    assigneeIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Assignee',
+      },
+    ],
+    tasks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Task',
+      },
+    ],
   },
-  description: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  managerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Assignee',
-    required: true
-  },
-  startDate: {
-    type: Date,
-    required: true
-  },
-  endDate: {
-    type: Date,
-    required: true
-  },
-  priority: {
-    type: String,
-    enum: ['Low', 'Medium', 'High'],
-    default: 'Medium'
-  },
-  assigneeIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Assignee'
-  }],
-  tasks: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task'
-  }]
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+  }
+);
 
 const Project = mongoose.model('Project', projectSchema);
 

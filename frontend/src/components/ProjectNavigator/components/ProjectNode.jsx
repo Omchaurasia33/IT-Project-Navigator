@@ -195,7 +195,7 @@ const ProjectNode = ({
 			{/* Subtasks */}
 			{isExpanded && hasSubtasks && (
 				<div className="w-full">
-					{node.subtasks.map((subtask) => (
+					{node.subtasks.filter(Boolean).map((subtask) => (
 						<ProjectNode
 							key={subtask._id}
 							node={subtask}

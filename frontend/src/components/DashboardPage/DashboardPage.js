@@ -1,5 +1,6 @@
 // components/DashboardPage/DashboardPage.js
 import React, { useEffect, useState } from "react";
+import { apiFetch } from "../../lib/api";
 import {
   PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer
@@ -16,7 +17,7 @@ const DashboardPage = () => {
   const [assigneeWorkload, setAssigneeWorkload] = useState([]);
 
   useEffect(() => {
-    fetch('/dashboard/summary')
+    apiFetch('/dashboard/summary')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load dashboard');
         return res.json();

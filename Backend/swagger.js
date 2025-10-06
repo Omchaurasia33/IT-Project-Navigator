@@ -109,7 +109,21 @@ const options = {
           },
         },
       },
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
     },
+    // Add security definitions
+    // Add security definitions
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
   apis: [path.join(__dirname, './routes/*.js')], // Use absolute path to ensure correct file resolution
 };

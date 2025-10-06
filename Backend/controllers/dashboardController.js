@@ -1,19 +1,23 @@
 const Task = require('../models/Task');
 const Project = require('../models/Project');
 const Assignee = require('../models/Assignee');
+const mongoose = require('mongoose');
 
-// GET /dashboard/summary
-// Returns overall metrics and chart-ready datasets
+// GET /dashboard/summary (tenant-aware)
+// Returns overall metrics and chart-ready datasets scoped to req.tenantId
 exports.getSummary = async (req, res) => {
   try {
+    const tenantId = new mongoose.Types.ObjectId(req.tenantId);
+
     const [projectsCount, tasksCount, assigneesCount] = await Promise.all([
-      Project.countDocuments(),
-      Task.countDocuments(),
-      Assignee.countDocuments(),
+      Project.countDocuments({ tenant: tenantId }),
+      Task.countDocuments({ tenant: tenantId }),
+      Assignee.countDocuments({ tenant: tenantId }),
     ]);
 
     // Task status distribution
     const taskStatusAgg = await Task.aggregate([
+      { $match: { tenant: tenantId } },
       { $group: { _id: '$status', value: { $sum: 1 } } },
       { $project: { _id: 0, name: '$_id', value: 1 } },
       { $sort: { name: 1 } },
@@ -21,6 +25,7 @@ exports.getSummary = async (req, res) => {
 
     // Tasks per project with project name
     const tasksPerProjectAgg = await Task.aggregate([
+      { $match: { tenant: tenantId } },
       { $group: { _id: '$project', tasks: { $sum: 1 } } },
       {
         $lookup: {
@@ -37,7 +42,7 @@ exports.getSummary = async (req, res) => {
 
     // Assignee workload (skip null)
     const assigneeWorkloadAgg = await Task.aggregate([
-      { $match: { assigneeId: { $ne: null } } },
+      { $match: { tenant: tenantId, assigneeId: { $ne: null } } },
       { $group: { _id: '$assigneeId', tasks: { $sum: 1 } } },
       {
         $lookup: {
@@ -54,6 +59,7 @@ exports.getSummary = async (req, res) => {
 
     // Completed projects: projects for which all their tasks are Done and there is at least 1 task
     const completionAgg = await Task.aggregate([
+      { $match: { tenant: tenantId } },
       {
         $group: {
           _id: '$project',

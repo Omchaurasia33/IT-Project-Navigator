@@ -77,52 +77,53 @@ const AssigneesPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save (Add or Edit)
-  const handleSave = () => {
-    const { name, email, role } = form;
-    if (!name.trim() || !email.trim() || !role.trim()) return;
+ // Save (Add or Edit)
+const handleSave = () => {
+  const { name, email, role } = form;
+  if (!name.trim() || !email.trim() || !role.trim()) return;
 
-    const payload = { name: name.trim(), email: email.trim(), role: role.trim() };
+  const payload = { name: name.trim(), email: email.trim(), role: role.trim() };
 
-    if (modalType === "add") {
-      apiFetch('/assignees', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+  if (modalType === "add") {
+    apiFetch('/assignees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to add assignee');
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to add assignee');
-          return res.json();
-        })
-        .then((newAssignee) => {
-          setAssignees((prev) => [...prev, newAssignee]);
-          closeModal();
-        })
-        .catch((err) => {
-          console.error('Failed to add assignee:', err);
-          alert('Failed to add assignee. Please try again.');
-        });
-apiFetch(`/assignees/${currentAssignee._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      .then((newAssignee) => {
+        setAssignees((prev) => [...prev, newAssignee]);
+        closeModal();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to update assignee');
-          return res.json();
-        })
-        .then((updatedAssignee) => {
-          setAssignees((prev) =>
-            prev.map((a) => (a._id === updatedAssignee._id ? updatedAssignee : a))
-          );
-          closeModal();
-        })
-        .catch((err) => {
-          console.error('Failed to update assignee:', err);
-          alert('Failed to update assignee. Please try again.');
-        });
-    }
-  };
+      .catch((err) => {
+        console.error('Failed to add assignee:', err);
+        alert('Failed to add assignee. Please try again.');
+      });
+  } else if (modalType === "edit") {  // ← ADDED THIS LINE
+    apiFetch(`/assignees/${currentAssignee._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to update assignee');
+        return res.json();
+      })
+      .then((updatedAssignee) => {
+        setAssignees((prev) =>
+          prev.map((a) => (a._id === updatedAssignee._id ? updatedAssignee : a))
+        );
+        closeModal();
+      })
+      .catch((err) => {
+        console.error('Failed to update assignee:', err);
+        alert('Failed to update assignee. Please try again.');
+      });
+  }
+};
 
   // Delete Assignee
   const handleDelete = () => {

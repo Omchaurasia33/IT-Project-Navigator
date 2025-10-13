@@ -3,7 +3,21 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../../auth/AuthContext';
 
+// Custom hook to load external scripts
+const useScript = (src) => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [src]);
+};
+
 const BillingPage = () => {
+  useScript('https://checkout.razorpay.com/v1/checkout.js');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
@@ -11,35 +25,59 @@ const BillingPage = () => {
 
   const reason = searchParams.get('reason');
 
-  const handleUpgrade = async (duration, planName) => {
+  const displayRazorpay = async (duration, planName, amount) => {
     setLoadingPlan(planName);
-    if (!window.confirm(`Are you sure you want to purchase the ${planName} plan?`)) {
-      setLoadingPlan(null);
-      return;
-    }
     try {
-      const res = await apiFetch('/billing/upgrade', {
+      const keyRes = await apiFetch('/billing/key');
+      const { keyId } = await keyRes.json();
+
+      const orderRes = await apiFetch('/billing/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ duration }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      
-      // Update user context with new tenant info
-      setUser({ ...user, tenant: data.tenant });
+      const order = await orderRes.json();
 
-      alert('Upgrade successful! You now have full access.');
-      navigate('/dashboard');
+      const options = {
+        key: keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Bhugol PM Tool',
+        description: `${planName} Plan`,
+        order_id: order.id,
+        handler: async (response) => {
+          try {
+            const verifyRes = await apiFetch('/billing/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...response, duration }),
+            });
+            const data = await verifyRes.json();
+            setUser({ ...user, tenant: data.tenant });
+            alert('Payment Successful! You now have full access.');
+            navigate('/dashboard');
+          } catch (err) {
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: {
+          color: '#3399cc'
+        }
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      alert(`Upgrade failed: ${err.message}`);
-    } finally {
-      setLoadingPlan(null);
+      alert('An error occurred. Please try again.');
     }
+    setLoadingPlan(null);
   };
 
   return (
-    <div style={{ padding: '2rem', color:"#333" }}>
+    <div style={{ padding: '2rem', color:'#333' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Choose Your Plan</h1>
         {reason === 'inactive' && (
@@ -58,7 +96,7 @@ const BillingPage = () => {
               <li>✅ Email support</li>
             </ul>
             <button 
-              onClick={() => handleUpgrade(30, 'Monthly')} 
+              onClick={() => displayRazorpay(30, 'Monthly', 30000)} 
               disabled={loadingPlan === 'Monthly'}
               style={{ width: '100%', padding: '0.75rem', background: '#111827', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
             >
@@ -76,7 +114,7 @@ const BillingPage = () => {
               <li>✅ Priority email support</li>
             </ul>
             <button 
-              onClick={() => handleUpgrade(60, 'Pro')} 
+              onClick={() => displayRazorpay(60, 'Pro', 50000)} 
               disabled={loadingPlan === 'Pro'}
               style={{ width: '100%', padding: '0.75rem', background: '#111827', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
             >

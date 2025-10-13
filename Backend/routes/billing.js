@@ -11,26 +11,57 @@ const billingController = require('../controllers/billingController');
 
 /**
  * @swagger
- * /billing:
+ * /billing/key:
  *   get:
- *     summary: Get billing information for the current tenant
+ *     summary: Get Razorpay Key ID
  *     tags: [Billing]
  *     responses:
  *       200:
- *         description: Billing information
+ *         description: The Razorpay Key ID
  */
-router.get('/', billingController.getBillingInfo);
+router.get('/key', billingController.getRazorpayKey);
 
 /**
  * @swagger
- * /billing/upgrade:
+ * /billing/create-order:
  *   post:
- *     summary: Upgrade to a paid plan (dummy endpoint)
+ *     summary: Create a Razorpay order
  *     tags: [Billing]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               duration: { type: number, example: 30 }
  *     responses:
  *       200:
- *         description: Plan upgraded successfully
+ *         description: The created Razorpay order
  */
-router.post('/upgrade', billingController.upgradePlan);
+router.post('/create-order', billingController.createOrder);
+
+/**
+ * @swagger
+ * /billing/verify-payment:
+ *   post:
+ *     summary: Verify a Razorpay payment and update subscription
+ *     tags: [Billing]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               razorpay_order_id: { type: string }
+ *               razorpay_payment_id: { type: string }
+ *               razorpay_signature: { type: string }
+ *               duration: { type: number }
+ *     responses:
+ *       200:
+ *         description: Payment verification status
+ */
+router.post('/verify-payment', billingController.verifyPayment);
 
 module.exports = router;

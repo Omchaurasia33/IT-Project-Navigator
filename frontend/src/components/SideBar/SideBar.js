@@ -13,6 +13,9 @@ import './SideBar.css';
 const SideBar = () => {
   const { user } = useAuth(); // Get user from auth context
 
+  const trialEndsAt = user?.tenant?.trialEndsAt ? new Date(user.tenant.trialEndsAt) : null;
+  const daysRemaining = trialEndsAt ? Math.ceil((trialEndsAt - new Date()) / (1000 * 60 * 60 * 24)) : null;
+
   // Define tabs with their routes and components
   const mainTabs = [
     { label: 'Dashboard', path: '/dashboard', element: <DashboardPage /> },
@@ -25,9 +28,9 @@ const SideBar = () => {
     <div className="app-layout">
       {/* Sidebar */}
       <aside className="sidebar" role="navigation" aria-label="Main navigation">
-        {user?.tenant?.subscriptionStatus === 'trialing' && (
+        {user?.tenant?.subscriptionStatus === 'trialing' && daysRemaining !== null && daysRemaining >= 0 && (
           <div className="trial-status">
-            Trial ends in {Math.ceil((new Date(user.tenant.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24))} days
+            Trial ends in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}
           </div>
         )}
         <nav className="main-nav" aria-label="Primary navigation">

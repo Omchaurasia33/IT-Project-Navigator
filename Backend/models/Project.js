@@ -15,21 +15,22 @@ const projectSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: true,
+      required: false,  // ✅ Changed to optional
       trim: true,
+      default: '',      // ✅ Added default
     },
     managerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Assignee',
-      required: true,
+      required: false,  // ✅ Changed to optional (for unassigned projects)
     },
     startDate: {
       type: Date,
-      required: true,
+      required: false,  // ✅ Changed to optional
     },
     endDate: {
       type: Date,
-      required: true,
+      required: false,  // ✅ Changed to optional
     },
     priority: {
       type: String,

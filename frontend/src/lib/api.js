@@ -1,3 +1,9 @@
+// src/lib/api.js
+
+/**
+ * Generic fetch helper that automatically adds Authorization header (if token exists)
+ * and redirects to login on 401.
+ */
 export async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('token');
   const headers = {
@@ -6,6 +12,7 @@ export async function apiFetch(url, options = {}) {
   };
 
   const res = await fetch(url, { ...options, headers });
+  
   if (res.status === 401) {
     // Invalid/expired token -> clear and redirect to login
     localStorage.removeItem('token');
@@ -21,5 +28,6 @@ export async function apiFetch(url, options = {}) {
       throw e;
     }
   }
+  
   return res;
 }

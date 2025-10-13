@@ -123,19 +123,21 @@ const ProjectsPage = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProject = () => {
-    const { name, description, managerId, startDate, endDate, priority } = form;
-    if (!name.trim()) return;
+const handleSaveProject = () => {
+  const { name, description, managerId, startDate, endDate, priority } = form;
+  if (!name.trim()) return;
 
-    // Convert dates to ISO strings if provided
-    const payload = {
-      name: name.trim(),
-      description: description.trim() || "",
-      managerId: managerId || null,
-      startDate: startDate ? new Date(startDate).toISOString() : null,
-      endDate: endDate ? new Date(endDate).toISOString() : null,
-      priority
-    };
+  // Provide defaults for required fields
+  const payload = {
+    name: name.trim(),
+    description: description.trim() || "No description provided",  // ✅ Default text
+    managerId: managerId || null,
+    startDate: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),  // ✅ Default to today
+    endDate: endDate ? new Date(endDate).toISOString() : new Date(Date.now() + 30*24*60*60*1000).toISOString(),  // ✅ Default to 30 days from now
+    priority
+  };
+
+  // rest of the code...
 
     if (modalType === "add") {
       apiFetch('/projects', {

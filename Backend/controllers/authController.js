@@ -82,3 +82,10 @@ exports.login = async (req, res) => {
     return res.status(500).json({ message: err.message || 'Login failed' });
   }
 };
+
+// POST /auth/logout
+exports.logout = async (req, res) => {
+  // In a stateful application, you would invalidate the token here.
+  // For this stateless JWT setup, the client is responsible for destroying the token.
+  res.status(200).json({ message: 'Successfully logged out' });
+};

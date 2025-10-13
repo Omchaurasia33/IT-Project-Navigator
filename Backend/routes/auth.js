@@ -57,4 +57,18 @@ router.post('/signup', authController.signup);
  */
 router.post('/login', authController.login);
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Log out the current user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ */
+router.post('/logout', authController.logout);
+
 module.exports = router;

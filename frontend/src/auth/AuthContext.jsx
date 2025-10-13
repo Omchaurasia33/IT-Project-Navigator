@@ -16,7 +16,23 @@ export function AuthProvider({ children }) {
     if (user) localStorage.setItem('user', JSON.stringify(user)); else localStorage.removeItem('user');
   }, [user]);
 
-  const value = useMemo(() => ({ token, user, setToken, setUser, logout: () => { setToken(null); setUser(null); } }), [token, user]);
+  const value = useMemo(() => ({
+    token, user, setToken, setUser, logout: async () => {
+      try {
+        const res = await fetch('/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) console.error('Logout failed on server');
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+      setToken(null);
+      setUser(null);
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+  }), [token, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

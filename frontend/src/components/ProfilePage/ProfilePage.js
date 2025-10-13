@@ -1,28 +1,35 @@
-// components/ProfilePage/ProfilePage.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/AuthContext';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(null);
+  const { user: authUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user data from localStorage
-    const fetchUserData = () => {
-      try {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          setUser(JSON.parse(userData));
+    if (authUser) {
+      setUser(authUser);
+      setLoading(false);
+    } else {
+      // Fallback to localStorage if authUser is not immediately available
+      const fetchUserData = () => {
+        try {
+          const userData = localStorage.getItem('user');
+          if (userData) {
+            setUser(JSON.parse(userData));
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+      };
+      fetchUserData();
+    }
+  }, [authUser]);
 
   const getInitials = (name) => {
     if (!name) return '?';
@@ -38,16 +45,10 @@ const ProfilePage = () => {
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Are you sure you want to log out?')) {
-      // Clear localStorage
-      localStorage.removeItem('user');
-      localStorage.removeItem('token'); // if you have auth token
-      
-      console.log('Logging out...');
-      
-      // Redirect to login page
-      window.location.href = '/login'; // or use React Router: navigate('/login')
+      await logout();
+      navigate('/login', { replace: true });
     }
   };
 

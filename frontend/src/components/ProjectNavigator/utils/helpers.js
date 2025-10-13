@@ -94,7 +94,7 @@ export const calculateProgress = (nodes) => {
     let total = 0;
     let completed = 0;
 
-    const countTasks = (taskList) => {
+    const countTasks = (taskList = []) => {
         taskList.forEach((task) => {
             total++;
             if (task.status === 'Done') completed++;

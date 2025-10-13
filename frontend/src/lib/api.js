@@ -28,6 +28,14 @@ export async function apiFetch(url, options = {}) {
       throw e;
     }
   }
+
+  if (res.status === 403) {
+    const data = await res.clone().json().catch(() => null);
+    if (data?.subscriptionStatus === 'inactive') {
+      window.location.assign('/billing?reason=inactive');
+      throw new Error(data.message || 'Subscription inactive');
+    }
+  }
   
   return res;
 }

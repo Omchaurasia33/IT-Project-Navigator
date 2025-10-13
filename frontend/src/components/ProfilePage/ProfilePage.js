@@ -97,8 +97,8 @@ const ProfilePage = () => {
           {formatRole(user.role)}
         </span>
         {user.tenant && (
-          <span className="profile-tenant" aria-label={`Organization: ${user.tenant}`}>
-            Organization: {user.tenant}
+          <span className="profile-tenant" aria-label={`Organization: ${user.tenant.name}`}>
+            Organization: {user.tenant.name}
           </span>
         )}
       </section>
@@ -159,10 +159,30 @@ const ProfilePage = () => {
           {user.tenant && (
             <div className="info-item">
               <dt>Organization:</dt>
-              <dd>{user.tenant}</dd>
+              <dd>{user.tenant.name}</dd>
             </div>
           )}
         </dl>
+      </section>
+
+      <section className="profile-section" aria-labelledby="plan-info">
+        <h2 id="plan-info">Plan Information</h2>
+        {user.tenant && (
+          <dl className="info-list">
+            <div className="info-item">
+              <dt>Plan:</dt>
+              <dd>{user.tenant.plan}</dd>
+            </div>
+            <div className="info-item">
+              <dt>Status:</dt>
+              <dd>{user.tenant.subscriptionStatus}</dd>
+            </div>
+            <div className="info-item">
+              <dt>{user.tenant.subscriptionStatus === 'trialing' ? 'Trial Ends:' : 'Subscription Ends:'}</dt>
+              <dd>{new Date(user.tenant.subscriptionStatus === 'trialing' ? user.tenant.trialEndsAt : user.tenant.subscriptionEndsAt).toLocaleDateString()}</dd>
+            </div>
+          </dl>
+        )}
       </section>
 
       <section className="profile-section" aria-labelledby="activity">

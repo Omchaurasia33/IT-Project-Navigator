@@ -6,7 +6,7 @@ const GanttChart = ({ tasks }) => {
     
     const getAllTasks = (tasks) => {
         let allTasks = [];
-        const traverse = (taskList, depth = 0) => {
+        const traverse = (taskList = [], depth = 0) => {
             taskList.forEach((task) => {
                 allTasks.push({ ...task, depth });
                 if (task.subtasks && task.subtasks.length > 0) {

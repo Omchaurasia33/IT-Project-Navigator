@@ -9,13 +9,22 @@
 
 /* Sidebar styles */
 .sidebar {
+  background-color: #f4f4f4;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  width: 250px;
-  border-right: 1px solid #e0e0e0;
-  background-color: #f8f9fa;
-  justify-content: space-between; /* Pushes footer to bottom */
-  padding: 20px 0; /* Top/bottom padding for spacing */
+  width: 220px;
+}
+
+.trial-status {
+  background-color: #ffefb3;
+  border: 1px solid #ffd700;
+  color: #333;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.875rem;
 }
 
 .main-nav {

@@ -35,6 +35,7 @@ app.use('/tasks', taskRoutes);
 app.use('/projects', projectRoutes);
 app.use('/assignees', assigneeRoutes);
 app.use('/dashboard', dashboardRoutes);
+app.use('/billing', require('./routes/billing'));
 
 // 404 handler
 app.use('*', (req, res) => {

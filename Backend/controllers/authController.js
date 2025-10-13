@@ -32,7 +32,16 @@ exports.signup = async (req, res) => {
     const slug = toSlug(tenantName);
     const existing = await Tenant.findOne({ slug });
     if (existing) return res.status(400).json({ message: 'Tenant name already exists' });
-    tenant = await Tenant.create({ name: tenantName, slug });
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 3);
+
+    tenant = await Tenant.create({ 
+      name: tenantName, 
+      slug, 
+      trialEndsAt,
+      subscriptionStatus: 'trialing' 
+    });
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email: email.toLowerCase().trim(), passwordHash, tenant: tenant._id });
@@ -40,7 +49,19 @@ exports.signup = async (req, res) => {
     const token = signToken(user);
     return res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, tenant: tenant.slug, role: user.role },
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        tenant: { 
+          slug: tenant.slug, 
+          name: tenant.name,
+          plan: tenant.plan,
+          subscriptionStatus: tenant.subscriptionStatus,
+          trialEndsAt: tenant.trialEndsAt
+        }
+      },
     });
   } catch (err) {
     if (err && err.code === 11000) {
@@ -71,7 +92,19 @@ exports.login = async (req, res) => {
     const token = signToken(user);
     return res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, tenant: tenant.slug, role: user.role },
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        tenant: { 
+          slug: tenant.slug, 
+          name: tenant.name,
+          plan: tenant.plan,
+          subscriptionStatus: tenant.subscriptionStatus,
+          trialEndsAt: tenant.trialEndsAt
+        }
+      },
     });
   } catch (err) {
     return res.status(500).json({ message: err.message || 'Login failed' });

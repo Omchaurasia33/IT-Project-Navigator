@@ -14,6 +14,20 @@ const tenantSchema = new mongoose.Schema(
       lowercase: true,
       unique: true,
     },
+    plan: {
+      type: String,
+      default: 'free',
+    },
+    subscriptionStatus: {
+      type: String,
+      default: 'trialing',
+    },
+    trialEndsAt: {
+      type: Date,
+    },
+    subscriptionEndsAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

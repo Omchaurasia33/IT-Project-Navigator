@@ -22,22 +22,17 @@ function signToken(user) {
 // Body: { name, email, password, tenantSlug? , tenantName? }
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, tenantSlug, tenantName } = req.body || {};
+    const { name, email, password, tenantName } = req.body || {};
 
-    if (!name || !email || !password || (!tenantSlug && !tenantName)) {
-      return res.status(400).json({ message: 'name, email, password and tenantSlug or tenantName are required' });
+    if (!name || !email || !password || !tenantName) {
+      return res.status(400).json({ message: 'name, email, password and tenantName are required' });
     }
 
     let tenant = null;
-    if (tenantSlug) {
-      tenant = await Tenant.findOne({ slug: tenantSlug.toLowerCase() });
-      if (!tenant) return res.status(400).json({ message: 'Tenant not found' });
-    } else {
-      const slug = toSlug(tenantName);
-      const existing = await Tenant.findOne({ slug });
-      if (existing) return res.status(400).json({ message: 'Tenant name already exists' });
-      tenant = await Tenant.create({ name: tenantName, slug });
-    }
+    const slug = toSlug(tenantName);
+    const existing = await Tenant.findOne({ slug });
+    if (existing) return res.status(400).json({ message: 'Tenant name already exists' });
+    tenant = await Tenant.create({ name: tenantName, slug });
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email: email.toLowerCase().trim(), passwordHash, tenant: tenant._id });

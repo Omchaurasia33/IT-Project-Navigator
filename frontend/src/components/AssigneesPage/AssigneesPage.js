@@ -90,8 +90,8 @@ const handleSave = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to add assignee');
+      .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.message || 'Failed to add assignee') });
         return res.json();
       })
       .then((newAssignee) => {
@@ -100,7 +100,7 @@ const handleSave = () => {
       })
       .catch((err) => {
         console.error('Failed to add assignee:', err);
-        alert('Failed to add assignee. Please try again.');
+        alert(`Error: ${err.message}`);
       });
   } else if (modalType === "edit") {  // ← ADDED THIS LINE
     apiFetch(`/assignees/${currentAssignee._id}`, {
@@ -108,8 +108,8 @@ const handleSave = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to update assignee');
+      .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.message || 'Failed to update assignee') });
         return res.json();
       })
       .then((updatedAssignee) => {
@@ -120,7 +120,7 @@ const handleSave = () => {
       })
       .catch((err) => {
         console.error('Failed to update assignee:', err);
-        alert('Failed to update assignee. Please try again.');
+        alert(`Error: ${err.message}`);
       });
   }
 };
@@ -132,8 +132,8 @@ const handleSave = () => {
     apiFetch(`/assignees/${currentAssignee._id}`, {
       method: 'DELETE',
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to delete assignee');
+      .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.message || 'Failed to delete assignee') });
         return res.json();
       })
       .then(() => {
@@ -142,7 +142,7 @@ const handleSave = () => {
       })
       .catch((err) => {
         console.error('Failed to delete assignee:', err);
-        alert('Failed to delete assignee. Please try again.');
+        alert(`Error: ${err.message}`);
       });
   };
 

@@ -6,7 +6,7 @@ import { apiFetch } from '../../lib/api';
 export default function SignupPage() {
   const { setToken, setUser } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', tenantSlug: '', tenantName: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', tenantName: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,15 +15,15 @@ export default function SignupPage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.name || !form.email || !form.password || (!form.tenantSlug && !form.tenantName)) {
-      setError('Name, email, password and either tenantSlug or tenantName are required');
+    if (!form.name || !form.email || !form.password || !form.tenantName) {
+      setError('All fields are required');
       return;
     }
     const body = {
       name: form.name,
       email: form.email,
       password: form.password,
-      ...(form.tenantSlug ? { tenantSlug: form.tenantSlug } : { tenantName: form.tenantName })
+      tenantName: form.tenantName
     };
     setLoading(true);
     try {
@@ -52,9 +52,7 @@ export default function SignupPage() {
         <label>Name<input name="name" value={form.name} onChange={onChange} required /></label>
         <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
         <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
-        <label>Tenant Slug (join existing)<input name="tenantSlug" value={form.tenantSlug} onChange={onChange} placeholder="your-company" /></label>
-        <div style={{textAlign:'center',color:'#6b7280',fontSize:12}}>— or —</div>
-        <label>Tenant Name (create new)<input name="tenantName" value={form.tenantName} onChange={onChange} placeholder="Your Company Inc" /></label>
+        <label>Company Name<input name="tenantName" value={form.tenantName} onChange={onChange} placeholder="Your Company Inc" required /></label>
         <button type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Sign up'}</button>
         <p>Already have an account? <Link to="/login">Login</Link></p>
       </form>

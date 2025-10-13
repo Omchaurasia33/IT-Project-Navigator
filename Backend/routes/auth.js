@@ -21,13 +21,12 @@ const authController = require('../controllers/authController');
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password]
+ *             required: [name, email, password, tenantName]
  *             properties:
  *               name: { type: string }
  *               email: { type: string }
  *               password: { type: string }
- *               tenantSlug: { type: string, description: "Join an existing tenant" }
- *               tenantName: { type: string, description: "Create a new tenant if tenantSlug is not provided" }
+ *               tenantName: { type: string, description: "Create a new tenant" }
  *     responses:
  *       201:
  *         description: User created and JWT returned

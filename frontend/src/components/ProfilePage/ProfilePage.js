@@ -1,57 +1,105 @@
 // components/ProfilePage/ProfilePage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
-  // In a real app, fetch this from user context, Redux, or API
-  const [user] = useState({
-    name: 'Alex Johnson',
-    email: 'alex.johnson@example.com',
-    role: 'Project Manager',
-    avatar: 'https://via.placeholder.com/100?text=AJ', // Replace with real avatar URL
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [avatarError, setAvatarError] = useState(false);
+  useEffect(() => {
+    // Fetch user data from localStorage
+    const fetchUserData = () => {
+      try {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleAvatarError = () => {
-    setAvatarError(true);
+    fetchUserData();
+  }, []);
+
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const formatRole = (role) => {
+    if (!role) return 'User';
+    return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
   const handleLogout = () => {
-    // In a real app, integrate with auth context or API
     if (window.confirm('Are you sure you want to log out?')) {
+      // Clear localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('token'); // if you have auth token
+      
       console.log('Logging out...');
-      // e.g., redirect to login page
+      
+      // Redirect to login page
+      window.location.href = '/login'; // or use React Router: navigate('/login')
     }
   };
 
   const handleLinkClick = (action) => {
-    // In a real app, use React Router or modals for navigation
     console.log(`Navigating to: ${action}`);
-    // e.g., set modal state or history.push(`/settings/${action.toLowerCase().replace(' ', '-')}`)
+    // Implement navigation using React Router
+    // navigate(`/settings/${action.toLowerCase().replace(/ /g, '-')}`);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <main className="profile-page" role="main">
+        <div className="loading-container">
+          <p>Loading profile...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Show error if no user data
+  if (!user) {
+    return (
+      <main className="profile-page" role="main">
+        <div className="error-container">
+          <p>No user data found. Please log in again.</p>
+          <button onClick={() => window.location.href = '/login'}>
+            Go to Login
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="profile-page" role="main" aria-labelledby="profile-title">
       <section className="profile-header" aria-labelledby="profile-name">
         <div className="avatar-container">
-          <img
-            src={user.avatar}
-            alt={`${user.name}'s profile avatar`}
-            className="profile-avatar"
-            onError={handleAvatarError}
-          />
-          {avatarError && (
-            <div className="avatar-fallback">
-              <span className="avatar-initials">{user.name.split(' ').map(n => n[0]).join('')}</span>
-            </div>
-          )}
+          <div className="avatar-fallback">
+            <span className="avatar-initials">{getInitials(user.name)}</span>
+          </div>
         </div>
         <h1 id="profile-name" className="profile-name">{user.name}</h1>
         <p className="profile-email" aria-label="Email address">{user.email}</p>
-        <span className="profile-role" role="img" aria-label={`Role: ${user.role}`}>
-          {user.role}
+        <span className="profile-role" aria-label={`Role: ${formatRole(user.role)}`}>
+          {formatRole(user.role)}
         </span>
+        {user.tenant && (
+          <span className="profile-tenant" aria-label={`Organization: ${user.tenant}`}>
+            Organization: {user.tenant}
+          </span>
+        )}
       </section>
 
       <section className="profile-section" aria-labelledby="account-settings">
@@ -62,6 +110,7 @@ const ProfilePage = () => {
             onClick={() => handleLinkClick('Update Profile')}
             aria-label="Update profile information"
           >
+            <span className="link-icon">👤</span>
             Update Profile
           </button>
           <button
@@ -69,6 +118,7 @@ const ProfilePage = () => {
             onClick={() => handleLinkClick('Change Password')}
             aria-label="Change password"
           >
+            <span className="link-icon">🔒</span>
             Change Password
           </button>
           <button
@@ -76,6 +126,7 @@ const ProfilePage = () => {
             onClick={() => handleLinkClick('Notification Preferences')}
             aria-label="Manage notification preferences"
           >
+            <span className="link-icon">🔔</span>
             Notification Preferences
           </button>
           <button
@@ -83,9 +134,34 @@ const ProfilePage = () => {
             onClick={() => handleLinkClick('Privacy Settings')}
             aria-label="Adjust privacy settings"
           >
+            <span className="link-icon">🛡️</span>
             Privacy Settings
           </button>
         </nav>
+      </section>
+
+      <section className="profile-section" aria-labelledby="account-info">
+        <h2 id="account-info">Account Information</h2>
+        <dl className="info-list">
+          <div className="info-item">
+            <dt>User ID:</dt>
+            <dd>{user.id}</dd>
+          </div>
+          <div className="info-item">
+            <dt>Email:</dt>
+            <dd>{user.email}</dd>
+          </div>
+          <div className="info-item">
+            <dt>Role:</dt>
+            <dd>{formatRole(user.role)}</dd>
+          </div>
+          {user.tenant && (
+            <div className="info-item">
+              <dt>Organization:</dt>
+              <dd>{user.tenant}</dd>
+            </div>
+          )}
+        </dl>
       </section>
 
       <section className="profile-section" aria-labelledby="activity">
@@ -93,11 +169,11 @@ const ProfilePage = () => {
         <dl className="activity-list">
           <div className="activity-item">
             <dt>Last login:</dt>
-            <dd>Today at 9:45 AM</dd>
+            <dd>{new Date().toLocaleString()}</dd>
           </div>
           <div className="activity-item">
-            <dt>Projects assigned:</dt>
-            <dd>5</dd>
+            <dt>Account status:</dt>
+            <dd className="status-active">Active</dd>
           </div>
         </dl>
       </section>

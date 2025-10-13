@@ -8,6 +8,7 @@ const assigneeRoutes = require('./routes/assignee');
 const setupSwagger = require('./swagger');
 const dashboardRoutes = require('./routes/dashboard');
 const authRoutes = require('./routes/auth');
+const tenantRoutes = require('./routes/tenant'); // Import tenant routes
 const requireAuth = require('./middleware/auth');
 
 const app = express();
@@ -25,6 +26,7 @@ mongoose
 
 // Public routes
 app.use('/auth', authRoutes);
+app.use('/tenants', tenantRoutes); // Use tenant routes
 setupSwagger(app);
 
 // Protected routes (require authentication)

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { apiFetch } from '../../lib/api';
@@ -7,8 +7,26 @@ export default function LoginPage() {
   const { setToken, setUser } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', tenantSlug: '' });
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const res = await apiFetch('/tenants');
+        const data = await res.json();
+        if (res.ok) {
+          setTenants(data);
+        } else {
+          throw new Error(data.message || 'Failed to fetch tenants');
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    fetchTenants();
+  }, []);
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -45,7 +63,15 @@ export default function LoginPage() {
         {error && <p className="auth-error">{error}</p>}
         <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
         <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
-        <label>Tenant Slug<input name="tenantSlug" value={form.tenantSlug} onChange={onChange} placeholder="your-company" required /></label>
+        <label>
+          Tenant
+          <select name="tenantSlug" value={form.tenantSlug} onChange={onChange} required>
+            <option value="" disabled>Select a tenant</option>
+            {tenants.map(tenant => (
+              <option key={tenant.slug} value={tenant.slug}>{tenant.name}</option>
+            ))}
+          </select>
+        </label>
         <button type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Login'}</button>
         <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
       </form>

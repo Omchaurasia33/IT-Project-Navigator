@@ -94,11 +94,22 @@ const options = {
             },
           },
         },
+        Tenant: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string'
+            },
+            slug: {
+              type: 'string'
+            }
+          }
+        },
         Assignee: {
           type: 'object',
           properties: {
             name: {
-              type: 'string',
+              type: 'string'
             },
             email: {
               type: 'string',

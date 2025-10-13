@@ -61,17 +61,26 @@ export default function LoginPage() {
       <form className="auth-card" onSubmit={onSubmit}>
         <h2>Login</h2>
         {error && <p className="auth-error">{error}</p>}
-        <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
-        <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
         <label>
-          Tenant
-          <select name="tenantSlug" value={form.tenantSlug} onChange={onChange} required>
-            <option value="" disabled>Select a tenant</option>
+          Organization
+          <select name="tenantSlug" value={form.tenantSlug} onChange={onChange} required 
+          style={{
+  padding: "10px 12px",
+  border: "1px solid #e5e7eb",
+  borderRadius: "8px",
+  color: "#000",
+}}
+
+          >
+            <option value="" disabled>Select your Organization</option>
             {tenants.map(tenant => (
               <option key={tenant.slug} value={tenant.slug}>{tenant.name}</option>
             ))}
           </select>
-        </label>
+        </label> 
+        <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
+        <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
+        
         <button type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Login'}</button>
         <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
       </form>

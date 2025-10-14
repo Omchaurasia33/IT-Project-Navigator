@@ -15,7 +15,6 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
     },
     tenant: {
       type: mongoose.Schema.Types.ObjectId,

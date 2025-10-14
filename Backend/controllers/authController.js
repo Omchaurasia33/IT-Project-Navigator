@@ -13,7 +13,7 @@ function toSlug(name) {
     .replace(/(^-|-$)+/g, '');
 }
 
-function signToken(user) {
+const signToken = exports.signToken = (user) => {
   const payload = { sub: String(user._id), tenant: String(user.tenant), role: user.role };
   const secret = process.env.JWT_SECRET || 'dev_secret';
   const expiresIn = process.env.JWT_EXPIRES_IN || '1d';
@@ -36,11 +36,6 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'Tenant name already exists' });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser && existingUser.isVerified) {
-      return res.status(409).json({ message: 'Email already registered and verified' });
-    }
-
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 3);
 
@@ -55,31 +50,16 @@ exports.signup = async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    let user;
-    if (existingUser) {
-      // Update existing unverified user
-      user = await User.findByIdAndUpdate(existingUser._id, {
-        name,
-        passwordHash,
-        tenant: tenant._id,
-        otp,
-        otpExpires,
-        isVerified: false,
-        role: 'admin' // First user in tenant is admin
-      }, { new: true });
-    } else {
-      // Create new user
-      user = await User.create({ 
-        name, 
-        email: email.toLowerCase().trim(), 
-        passwordHash, 
-        tenant: tenant._id,
-        role: 'admin', // First user in tenant is admin
-        otp, 
-        otpExpires,
-        isVerified: false
-      });
-    }
+    const user = await User.create({ 
+      name, 
+      email: email.toLowerCase().trim(), 
+      passwordHash, 
+      tenant: tenant._id,
+      role: 'admin', // First user in tenant is admin
+      otp, 
+      otpExpires,
+      isVerified: false
+    });
 
     await sendEmail({
       to: user.email,
@@ -102,7 +82,13 @@ exports.signup = async (req, res) => {
   } catch (err) {
     console.error('Signup error:', err);
     if (err && err.code === 11000) {
-      return res.status(409).json({ message: 'Email already registered for this tenant' });
+      if (err.keyValue && err.keyValue.slug) {
+        return res.status(409).json({ message: 'Tenant name already exists. Please choose another name.' });
+      }
+      if (err.keyValue && err.keyValue.email) {
+        return res.status(409).json({ message: 'Email already registered for this tenant.' });
+      }
+      return res.status(409).json({ message: 'A resource with this identifier already exists.' });
     }
     return res.status(500).json({ message: err.message || 'Signup failed' });
   }
@@ -241,8 +227,8 @@ exports.login = async (req, res) => {
       tenant: tenant._id 
     });
     
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ message: 'Invalid credentials. If you signed up using Google, please use Google to log in.' });
     }
 
     if (!user.isVerified) {
@@ -413,6 +399,43 @@ exports.resetPassword = async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     return res.status(500).json({ message: 'Failed to reset password' });
+  }
+};
+
+// GET /auth/me
+// Returns the currently authenticated user
+exports.getMe = async (req, res) => {
+  console.log('/auth/me endpoint hit.');
+  try {
+    console.log('JWT payload (req.user):', req.user);
+    // req.user.id is from the JWT payload (sub claim)
+    const user = await User.findById(req.user.id).populate('tenant');
+    console.log('User found in database:', user);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const tenant = user.tenant;
+
+    return res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenant: {
+          slug: tenant.slug,
+          name: tenant.name,
+          plan: tenant.plan,
+          subscriptionStatus: tenant.subscriptionStatus,
+          trialEndsAt: tenant.trialEndsAt
+        }
+      }
+    });
+  } catch (err) {
+    console.error('GetMe error:', err);
+    return res.status(500).json({ message: 'Server Error' });
   }
 };
 

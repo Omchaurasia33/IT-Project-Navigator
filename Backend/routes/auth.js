@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const authController = require('../controllers/authController');
+const requireAuth = require('../middleware/auth');
 
 /**
  * @swagger
@@ -112,5 +114,31 @@ router.post('/login', authController.login);
  *         description: Successfully logged out
  */
 router.post('/logout', authController.logout);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get the current authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user data returned
+ *       401:
+ *         description: Not authorized
+ */
+router.get('/me', requireAuth, authController.getMe);
+
+// Google OAuth
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), (req, res) => {
+  console.log('Google callback successful. User from passport:', req.user);
+  const token = authController.signToken(req.user);
+  console.log('Generated JWT:', token);
+  res.redirect(`http://localhost:3001/auth/callback?token=${token}`);
+});
 
 module.exports = router;

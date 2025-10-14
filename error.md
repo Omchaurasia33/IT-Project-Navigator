@@ -1,105 +1,81 @@
-This React error means **you are trying to render a raw object inside JSX**, something like this 👇
-
-```jsx
-<p>{someObject}</p>
-```
-
-…but React can only render **strings, numbers, elements, or arrays of elements**, not plain objects.
+Ah! That error comes from **Mongoose schema validation**. Let’s break it down carefully:
 
 ---
 
-### 🔍 The key clue from your error:
+## **What the error means**
 
-> found: object with keys `{slug, name, plan, subscriptionStatus, trialEndsAt}`
-
-So somewhere in your component, you have code like:
-
-```jsx
-{userData} 
+```
+ValidationError: User validation failed: passwordHash: Path `passwordHash` is required.
 ```
 
-or
+* Your **User schema** in Mongoose has a field called `passwordHash` marked as **required**.
+* You are trying to **create a user without providing `passwordHash`** (e.g., when signing in via Google login or another OAuth provider).
 
-```jsx
-{project} 
-```
-
-where that variable actually looks like:
+Example schema snippet:
 
 ```js
-{
-  slug: "...",
-  name: "...",
-  plan: "...",
-  subscriptionStatus: "...",
-  trialEndsAt: "..."
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true } // <- required
+});
+```
+
+* When using **Google login**, you usually **don’t have a password**, so `passwordHash` will be missing → validation fails.
+
+---
+
+## **How to fix it**
+
+### **Option 1: Make `passwordHash` optional**
+
+```js
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String }, // remove required
+  googleId: { type: String } // optional, for Google users
+});
+```
+
+* Now users created via Google OAuth can be saved without a password.
+
+---
+
+### **Option 2: Use conditional required**
+
+If some users must have passwords (email signup) and some don’t (Google), you can do:
+
+```js
+passwordHash: {
+  type: String,
+  required: function() {
+    return !this.googleId; // required only if googleId is missing
+  }
 }
 ```
 
 ---
 
-### ✅ Fix Options
+### **Option 3: Provide a dummy password**
 
-#### ✅ Option 1: Display specific fields
+Not recommended for Google login, but technically possible:
 
-If you just want to show some info from that object:
-
-```jsx
-<p>{data.name}</p>
-<p>{data.plan}</p>
-<p>{data.subscriptionStatus}</p>
-```
-
-#### ✅ Option 2: Convert object to string (for debugging)
-
-```jsx
-<pre>{JSON.stringify(data, null, 2)}</pre>
-```
-
-This is great for debugging — shows the full object as formatted JSON.
-
-#### ✅ Option 3: Map over an array if you meant to render multiple items
-
-If you accidentally rendered an array of objects directly:
-
-```jsx
-{projects}
-```
-
-change it to:
-
-```jsx
-{projects.map(project => (
-  <div key={project.slug}>
-    <h3>{project.name}</h3>
-    <p>{project.plan}</p>
-  </div>
-))}
+```js
+const user = new User({
+  name: profile.displayName,
+  email: profile.emails[0].value,
+  passwordHash: "", // or some random string
+  googleId: profile.id
+});
 ```
 
 ---
 
-### 💡 Example Before & After
-
-**❌ Wrong**
-
-```jsx
-return <div>{user}</div>;
-```
-
-**✅ Correct**
-
-```jsx
-return (
-  <div>
-    <h2>{user.name}</h2>
-    <p>Plan: {user.plan}</p>
-    <p>Status: {user.subscriptionStatus}</p>
-  </div>
-);
-```
+✅ **Recommendation:** Use **Option 1 or 2**, so Google users don’t need a password.
 
 ---
 
-If you paste the **relevant component’s code** (where this error appears — likely something that renders user, project, or subscription data),
-I’ll pinpoint exactly where to fix it and show the corrected JSX.
+If you want, I can rewrite your **User schema** so that it works seamlessly with **both email/password login and Google login**, and won’t throw this validation error.
+
+Do you want me to do that?

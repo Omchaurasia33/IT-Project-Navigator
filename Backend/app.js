@@ -1,6 +1,9 @@
 // app.js
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passport'); // Passport configuration
 const mongoose = require('mongoose');
 const taskRoutes = require('./routes/task');
 const projectRoutes = require('./routes/project');
@@ -14,7 +17,22 @@ const requireAuth = require('./middleware/auth');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Enable CORS for the frontend
+app.use(require('cors')({
+  origin: 'http://localhost:3001', // Allow the frontend origin
+  credentials: true
+}));
+
 app.use(express.json());
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your_secret_key',
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 mongoose
   .connect(process.env.MONGODB_URI, {
@@ -30,12 +48,11 @@ app.use('/tenants', tenantRoutes); // Use tenant routes
 setupSwagger(app);
 
 // Protected routes (require authentication)
-app.use(requireAuth);
-app.use('/tasks', taskRoutes);
-app.use('/projects', projectRoutes);
-app.use('/assignees', assigneeRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/billing', require('./routes/billing'));
+app.use('/tasks', requireAuth, taskRoutes);
+app.use('/projects', requireAuth, projectRoutes);
+app.use('/assignees', requireAuth, assigneeRoutes);
+app.use('/dashboard', requireAuth, dashboardRoutes);
+app.use('/billing', requireAuth, require('./routes/billing'));
 
 // 404 handler
 app.use('*', (req, res) => {

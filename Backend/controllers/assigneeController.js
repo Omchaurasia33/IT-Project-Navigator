@@ -14,10 +14,8 @@ exports.createAssignee = async (req, res) => {
     const newAssignee = await assignee.save();
     res.status(201).json(newAssignee);
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ message: 'An assignee with this email already exists for your tenant.' });
-    }
-    res.status(400).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 

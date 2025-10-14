@@ -35,6 +35,49 @@ router.post('/signup', authController.signup);
 
 /**
  * @swagger
+ * /auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP sent to email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp]
+ *             properties:
+ *               email: { type: string }
+ *               otp: { type: string }
+ *     responses:
+ *       200:
+ *         description: OTP verified and JWT returned
+ */
+router.post('/verify-otp', authController.verifyOtp);
+
+/**
+ * @swagger
+ * /auth/resend-otp:
+ *   post:
+ *     summary: Resend OTP to email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200:
+ *         description: New OTP sent
+ */
+router.post('/resend-otp', authController.resendOtp);
+
+/**
+ * @swagger
  * /auth/login:
  *   post:
  *     summary: Login and receive a JWT

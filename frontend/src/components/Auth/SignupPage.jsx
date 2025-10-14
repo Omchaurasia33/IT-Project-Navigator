@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
@@ -93,39 +92,78 @@ export default function SignupPage() {
     }
   };
 
+  const inputClasses = "mt-1 block w-full px-3 py-2 bg-transparent border border-border-light dark:border-border-dark rounded-md shadow-sm placeholder-placeholder-light dark:placeholder-placeholder-dark focus:outline-none focus:ring-primary focus:border-primary text-text-light dark:text-text-dark sm:text-sm";
+  const buttonClasses = "w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50";
+
   return (
-    <div className="auth-container">
-      {!otpSent ? (
-        <form className="auth-card" onSubmit={onSignupSubmit}>
-          <h2>Sign up</h2>
-          {error && <p className="auth-error">{error}</p>}
-          <label>Name<input name="name" value={form.name} onChange={onChange} required /></label>
-          <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
-          <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
-          <label>Company Name<input name="tenantName" value={form.tenantName} onChange={onChange} placeholder="Your Company Inc" required /></label>
-          <button type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Sign up'}</button>
-          <p>Already have an account? <Link to="/login">Login</Link></p>
-        </form>
-      ) : (
-        <form className="auth-card" onSubmit={onVerifyOtpSubmit}>
-          <h2>Verify your email</h2>
-          <p>An OTP has been sent to <strong>{form.email}</strong>. Please enter it below.</p>
-          {error && <p className="auth-error">{error}</p>}
-          <label>OTP<input name="otp" value={otp} onChange={onOtpChange} required /></label>
-          <button type="submit" disabled={loading}>{loading ? 'Verifying...' : 'Verify'}</button>
-          <p>Didn't receive the code? <button type="button" onClick={onResendOtp} disabled={loading} className="link-button">Resend OTP</button></p>
-        </form>
-      )}
-      <style>{`
-        .auth-container{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;padding:16px}
-        .auth-card{width:100%;max-width:380px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);color:#000}
-        h2{margin:0 0 16px}
-        label{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-        input{padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;color:#000}
-        button{margin-top:8px;width:100%;padding:10px 12px;border-radius:8px;border:none;background:#111827;color:#fff;font-weight:600}
-        .auth-error{color:#dc2626;margin:0 0 10px}
-        .link-button{background:none;border:none;color:#111827;text-decoration:underline;padding:0;margin:0;cursor:pointer;}
-      `}</style>
+    <div className="bg-background-light dark:bg-background-dark flex items-center justify-center min-h-screen" style={{color:'#333'}}>
+      <div className="w-full max-w-md p-8 space-y-6 bg-form-bg-light dark:bg-form-bg-dark rounded-lg shadow-lg">
+        {!otpSent ? (
+          <>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-text-light dark:text-text-dark">Create your account</h1>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Start your 3-day free trial. No credit card required.</p>
+            </div>
+            {error && <p className="text-center text-sm text-red-500">{error}</p>}
+            <form className="space-y-6" onSubmit={onSignupSubmit}>
+              <div>
+                <label htmlFor="name" className="text-sm font-medium text-text-light dark:text-text-dark">Name</label>
+                <input id="name" name="name" type="text" required className={inputClasses} value={form.name} onChange={onChange} />
+              </div>
+              <div>
+                <label htmlFor="email" className="text-sm font-medium text-text-light dark:text-text-dark">Email</label>
+                <input id="email" name="email" type="email" autoComplete="email" required className={inputClasses} value={form.email} onChange={onChange} />
+              </div>
+              <div>
+                <label htmlFor="password"className="text-sm font-medium text-text-light dark:text-text-dark">Password</label>
+                <input id="password" name="password" type="password" autoComplete="current-password" required className={inputClasses} value={form.password} onChange={onChange} />
+              </div>
+              <div>
+                <label htmlFor="tenantName" className="text-sm font-medium text-text-light dark:text-text-dark">Company Name</label>
+                <input id="tenantName" name="tenantName" type="text" required placeholder="Your Company Inc" className={inputClasses} value={form.tenantName} onChange={onChange} />
+              </div>
+              <div>
+                <button type="submit" disabled={loading} className={buttonClasses}>
+                  {loading ? 'Creating account...' : 'Sign up'}
+                </button>
+              </div>
+            </form>
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+              Already have an account?{' '}
+              <Link to="/login" className="font-medium text-primary hover:text-opacity-80">
+                Login
+              </Link>
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-text-light dark:text-text-dark">Verify your email</h1>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                An OTP has been sent to <strong>{form.email}</strong>. Please enter it below.
+              </p>
+            </div>
+            {error && <p className="text-center text-sm text-red-500">{error}</p>}
+            <form className="space-y-6" onSubmit={onVerifyOtpSubmit}>
+              <div>
+                <label htmlFor="otp" className="text-sm font-medium text-text-light dark:text-text-dark">One-Time Password (OTP)</label>
+                <input id="otp" name="otp" type="text" required className={inputClasses} value={otp} onChange={onOtpChange} />
+              </div>
+              <div>
+                <button type="submit" disabled={loading} className={buttonClasses}>
+                  {loading ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+            </form>
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+              Didn't receive the code?{' '}
+              <button type="button" onClick={onResendOtp} disabled={loading} className="font-medium text-primary hover:text-opacity-80 bg-transparent border-none p-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                Resend OTP
+              </button>
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -55,44 +55,86 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  
+  const inputClasses = "mt-1 block w-full px-3 py-2 bg-transparent border border-border-light dark:border-border-dark rounded-md shadow-sm placeholder-placeholder-light dark:placeholder-placeholder-dark focus:outline-none focus:ring-primary focus:border-primary text-text-light dark:text-text-dark sm:text-sm";
+  const buttonClasses = "w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50";
 
   return (
-    <div className="auth-container">
-      <form className="auth-card" onSubmit={onSubmit}>
-        <h2>Login</h2>
-        {error && <p className="auth-error">{error}</p>}
-        <label>
-          Organization
-          <select name="tenantSlug" value={form.tenantSlug} onChange={onChange} required 
-          style={{
-  padding: "10px 12px",
-  border: "1px solid #e5e7eb",
-  borderRadius: "8px",
-  color: "#000",
-}}
+    <div className="bg-background-light dark:bg-background-dark flex items-center justify-center min-h-screen" style={{color:'#333'}}>
+      <div className="w-full max-w-md p-8 space-y-6 bg-form-bg-light dark:bg-form-bg-dark rounded-lg shadow-lg">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-text-light dark:text-text-dark">Sign in to your account</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Select your organization to continue</p>
+        </div>
 
-          >
-            <option value="" disabled>Select your Organization</option>
-            {tenants.map(tenant => (
-              <option key={tenant.slug} value={tenant.slug}>{tenant.name}</option>
-            ))}
-          </select>
-        </label> 
-        <label>Email<input name="email" type="email" value={form.email} onChange={onChange} required /></label>
-        <label>Password<input name="password" type="password" value={form.password} onChange={onChange} required /></label>
-        
-        <button type="submit" disabled={loading}>{loading ? 'Signing in...' : 'Login'}</button>
-        <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
-      </form>
-      <style>{`
-        .auth-container{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;padding:16px}
-        .auth-card{width:100%;max-width:380px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);color:#000}
-        h2{margin:0 0 16px}
-        label{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-        input{padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;color:#000}
-        button{margin-top:8px;width:100%;padding:10px 12px;border-radius:8px;border:none;background:#111827;color:#fff;font-weight:600}
-        .auth-error{color:#dc2626;margin:0 0 10px}
-      `}</style>
+        {error && <p className="text-center text-sm text-red-500">{error}</p>}
+
+        <form className="space-y-6" onSubmit={onSubmit}>
+          <div>
+            <label htmlFor="tenantSlug" className="text-sm font-medium text-text-light dark:text-text-dark">
+              Organization
+            </label>
+            <select
+              id="tenantSlug"
+              name="tenantSlug"
+              value={form.tenantSlug}
+              onChange={onChange}
+              required
+              className={inputClasses}
+            >
+              <option value="" disabled>Select your Organization</option>
+              {tenants.map(tenant => (
+                <option key={tenant.slug} value={tenant.slug}>{tenant.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="email" className="text-sm font-medium text-text-light dark:text-text-dark">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className={inputClasses}
+              value={form.email}
+              onChange={onChange}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="text-sm font-medium text-text-light dark:text-text-dark">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className={inputClasses}
+              value={form.password}
+              onChange={onChange}
+            />
+          </div>
+
+          <div>
+            <button type="submit" disabled={loading} className={buttonClasses}>
+              {loading ? 'Signing in...' : 'Login'}
+            </button>
+          </div>
+        </form>
+
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account?{' '}
+          <Link to="/signup" className="font-medium text-primary hover:text-opacity-80">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

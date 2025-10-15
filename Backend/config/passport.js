@@ -10,39 +10,20 @@ passport.use(new GoogleStrategy({
     callbackURL: 'http://localhost:3000/auth/google/callback'
   },
   async (accessToken, refreshToken, profile, done) => {
-    console.log('--- Google OAuth Profile ---');
-    console.log(profile);
-    console.log('--------------------------');
     try {
       const email = profile.emails[0].value;
-      console.log(`Google user email: ${email}`);
-      let user = await User.findOne({ email });
+      const user = await User.findOne({ email });
 
       if (user) {
-        console.log('Existing user found:', user);
-        // User exists, log them in
-        return done(null, user);
+        // User exists, return the user
+        return done(null, { existingUser: user });
       } else {
-        console.log('No existing user found. Creating new user and tenant.');
-        // User doesn't exist, create a new user and a new tenant
-        const uniqueSlug = `${profile.displayName.toLowerCase().replace(/\s+/g, '-')}-${crypto.randomBytes(4).toString('hex')}`;
-        const newTenant = new Tenant({
-          name: `${profile.displayName}'s Organization`,
-          slug: uniqueSlug
-        });
-        await newTenant.save();
-
-        const newUser = new User({
+        // User doesn't exist, return new user info
+        const newUser = {
           name: profile.displayName,
           email: email,
-          googleId: profile.id,
-          tenant: newTenant._id,
-          isVerified: true, // Google users are considered verified
-          role: 'admin' // First user is admin
-        });
-        await newUser.save();
-        
-        return done(null, newUser);
+        };
+        return done(null, { newUser });
       }
     } catch (error) {
       return done(error, false);

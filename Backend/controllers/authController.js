@@ -402,6 +402,75 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+exports.googleSignup = async (req, res) => {
+  try {
+    const { name, email, password, tenantName } = req.body;
+
+    if (!name || !email || !password || !tenantName) {
+      return res.status(400).json({ message: 'name, email, password and tenantName are required' });
+    }
+
+    const slug = toSlug(tenantName);
+    const existingTenant = await Tenant.findOne({ slug });
+    if (existingTenant) {
+      return res.status(400).json({ message: 'Tenant name already exists' });
+    }
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 3);
+
+    const tenant = await Tenant.create({ 
+      name: tenantName, 
+      slug, 
+      trialEndsAt,
+      subscriptionStatus: 'trialing' 
+    });
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({ 
+      name, 
+      email: email.toLowerCase().trim(), 
+      passwordHash, 
+      tenant: tenant._id,
+      role: 'admin', // First user in tenant is admin
+      isVerified: true // Email is verified by Google
+    });
+
+    const token = signToken(user);
+
+    return res.status(201).json({
+      message: 'Account created successfully.',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        tenant: {
+          slug: tenant.slug,
+          name: tenant.name,
+          plan: tenant.plan,
+          subscriptionStatus: tenant.subscriptionStatus,
+          trialEndsAt: tenant.trialEndsAt
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Google signup error:', err);
+    if (err && err.code === 11000) {
+      if (err.keyValue && err.keyValue.slug) {
+        return res.status(409).json({ message: 'Tenant name already exists. Please choose another name.' });
+      }
+      if (err.keyValue && err.keyValue.email) {
+        return res.status(409).json({ message: 'Email already registered for this tenant.' });
+      }
+      return res.status(409).json({ message: 'A resource with this identifier already exists.' });
+    }
+    return res.status(500).json({ message: err.message || 'Signup failed' });
+  }
+};
+
 // GET /auth/me
 // Returns the currently authenticated user
 exports.getMe = async (req, res) => {

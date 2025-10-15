@@ -128,6 +128,20 @@ export default function SignupPage() {
                 </button>
               </div>
             </form>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-form-bg-light dark:bg-form-bg-dark text-gray-500 dark:text-gray-400">Or continue with</span>
+              </div>
+            </div>
+            <div>
+              <a href="http://localhost:3000/auth/google" className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <img className="w-5 h-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
+                Google
+              </a>
+            </div>
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
               Already have an account?{' '}
               <Link to="/login" className="font-medium text-primary hover:text-opacity-80">

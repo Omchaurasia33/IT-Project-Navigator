@@ -34,6 +34,7 @@ const requireAuth = require('../middleware/auth');
  *         description: User created and JWT returned
  */
 router.post('/signup', authController.signup);
+router.post('/google-signup', authController.googleSignup);
 
 /**
  * @swagger
@@ -134,11 +135,26 @@ router.get('/me', requireAuth, authController.getMe);
 // Google OAuth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), (req, res) => {
-  console.log('Google callback successful. User from passport:', req.user);
-  const token = authController.signToken(req.user);
-  console.log('Generated JWT:', token);
-  res.redirect(`http://localhost:3001/auth/callback?token=${token}`);
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false }, (err, user, info) => {
+    if (err) {
+      return res.redirect('http://localhost:3001/login?error=google-auth-failed');
+    }
+    if (!user) {
+      return res.redirect('http://localhost:3001/login?error=no-user-from-google');
+    }
+
+    // If user exists, log them in directly
+    if (user.existingUser) {
+      const token = authController.signToken(user.existingUser);
+      return res.redirect(`http://localhost:3001/auth/callback?token=${token}`);
+    }
+
+    // If user is new, redirect to a new page to complete signup
+    const { name, email } = user.newUser;
+    res.redirect(`http://localhost:3001/signup-google?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`);
+
+  })(req, res, next);
 });
 
 module.exports = router;

@@ -148,8 +148,8 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            <svg className="w-5 h-5 mr-2" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-76.2 76.2c-27.3-26.2-62.3-42.4-101.7-42.4-88.5 0-160.9 72.4-160.9 160.9s72.4 160.9 160.9 160.9c39.4 0 74.4-16.2 101.7-42.4l76.2 76.2C374 480.6 314.8 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-76.2 76.2c-27.3-26.2-62.3-42.4-101.7-42.4-88.5 0-160.9 72.4-160.9 160.9s72.4 160.9 160.9 160.9c39.4 0 74.4-16.2 101.7-42.4l76.2 76.2C374 480.6 314.8 504 248 504z"></path></svg>
-            Google
+            <img className="w-5 h-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
+                Google
           </button>
         </div>
 

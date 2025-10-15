@@ -123,6 +123,11 @@ export default function LoginPage() {
               value={form.password}
               onChange={onChange}
             />
+            <div className="text-sm">
+              <Link to="/forgot-password" className="font-medium text-primary hover:text-opacity-80">
+                Forgot your password?
+              </Link>
+            </div>
           </div>
 
           <div>

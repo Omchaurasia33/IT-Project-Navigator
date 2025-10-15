@@ -2,8 +2,10 @@
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 const dotenv = require("dotenv");
+const path = require("path");
 
-dotenv.config({ path: '../.env' });
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const OAuth2 = google.auth.OAuth2;
 

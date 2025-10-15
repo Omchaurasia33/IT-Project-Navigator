@@ -8,6 +8,8 @@ import LoginPage from './components/Auth/LoginPage';
 import SignupPage from './components/Auth/SignupPage';
 import AuthCallback from './components/Auth/AuthCallback';
 import GoogleSignupPage from './components/Auth/GoogleSignupPage';
+import ForgotPasswordPage from './components/Auth/ForgotPasswordPage';
+import ResetPasswordPage from './components/Auth/ResetPasswordPage';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/signup-google" element={<GoogleSignupPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Protected routes render the main app with sidebar */}
         <Route element={<ProtectedRoute />}>
